@@ -53,3 +53,10 @@ def vertical_concat(png_list: List[str], savefn: str, rm_orig=False):
 def remove_files(file_list):
     for f in file_list:
         os.remove(f)
+
+
+def make_gif(png_list: List[str], savefn: str, rm_orig=False):
+    images = [Image.open(i) for i in png_list]
+    images[0].save(savefn, save_all=True, append_images=images[1:], duration=1000, loop=0)
+    if rm_orig:
+        remove_files(png_list)

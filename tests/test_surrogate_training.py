@@ -5,10 +5,9 @@ import numpy as np
 from lnl_surrogate.surrogate import train, load
 import pytest
 
-
 @pytest.mark.parametrize('model_type', ['gp', 'deepgp'])
 def test_1d(mock_data, tmpdir, model_type):
-    outdir = f'{tmpdir}/model_type'
+    outdir = f'{tmpdir}/{model_type}'
     res = train(
         model_type=model_type,
         mcz_obs=mock_data.observations.mcz,

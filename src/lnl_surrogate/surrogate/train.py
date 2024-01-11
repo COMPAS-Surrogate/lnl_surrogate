@@ -10,7 +10,9 @@ import os
 from tqdm.auto import trange
 from trieste.models.utils import get_module_with_variables
 
+
 from ..logger import logger
+from ..plotting.plot_bo_metrics import plot_bo_metrics
 
 import numpy as np
 
@@ -53,7 +55,7 @@ def train(
         # save gif in the save outdir
         pass
 
-    logger.info("Optimization complete, saving result and data")
+    logger.info(f"Optimization complete, saving result and data to {outdir}")
     _save(result, data, outdir)
     return result
 
@@ -81,4 +83,5 @@ def _save(result: OptimizationResult, data: Dataset, outdir: str):
     tf.saved_model.save(module, f"{outdir}/{CACHED_RES_FNAME}")
     inputs = data.query_points.numpy()
     outputs = data.observations.numpy()
+    plot_bo_metrics(inputs, outputs).savefig(f"{outdir}/bo_metrics.png")
     np.savez(f"{outdir}/data.npz", inputs=inputs, outputs=outputs)
