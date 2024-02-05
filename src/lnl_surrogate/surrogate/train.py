@@ -6,13 +6,14 @@ import tensorflow as tf
 from trieste.logging import set_tensorboard_writer
 from trieste.models import TrainableProbabilisticModel
 from trieste.data import Dataset
+from collections import OrderedDict
 import os
 from tqdm.auto import trange
 from trieste.models.utils import get_module_with_variables
 
-
 from ..logger import logger
 from ..plotting.plot_bo_metrics import plot_bo_metrics
+from ..plotting import save_diagnostic_plots
 
 import numpy as np
 
@@ -34,8 +35,27 @@ def train(
         n_rounds: int = 5,
         n_pts_per_round: int = 10,
         outdir: str = 'outdir',
-        model_plotter: Callable = None
+        model_plotter: Callable = None,
+        truth=dict()
 ) -> OptimizationResult:
+    """
+    Train a surrogate model using the given data and parameters.
+    :param model_type: one of 'gp' or 'deepgp'
+    :param mcz_obs: the observed MCZ values
+    :param compas_h5_filename: the filename of the compas data
+    :param params: the parameters to use [aSF, dSF, sigma0, muz]
+    :param acquisition_fns: the acquisition functions to use
+    :param n_init: the number of initial points to use
+    :param n_rounds: the number of rounds of optimization to perform
+    :param n_pts_per_round: the number of points to evaluate per round
+    :param outdir: the output directory
+    :param model_plotter: a function to plot the model
+    :return: the optimization result
+
+    """
+
+    truth = order_truths(truth, params)
+
     _setup_tf_logging(outdir)
     bo, data = setup_optimizer(mcz_obs, compas_h5_filename, params, n_init)
     model = get_model(model_type, data, bo._search_space)
@@ -48,6 +68,7 @@ def train(
         data: Dataset = result.try_get_final_dataset()
         model: TrainableProbabilisticModel = result.try_get_final_model()
         # regret.append(result.try_get_final_regret())
+        save_diagnostic_plots(data, model, bo._search_space, outdir, f"round{round_idx}", truth)
         if model_plotter:
             model_plotter(model, data, bo._search_space).savefig(f"{outdir}/round_{round_idx}.png")
 
@@ -83,5 +104,15 @@ def _save(result: OptimizationResult, data: Dataset, outdir: str):
     tf.saved_model.save(module, f"{outdir}/{CACHED_RES_FNAME}")
     inputs = data.query_points.numpy()
     outputs = data.observations.numpy()
+
+
+
     plot_bo_metrics(inputs, outputs).savefig(f"{outdir}/bo_metrics.png")
     np.savez(f"{outdir}/data.npz", inputs=inputs, outputs=outputs)
+
+
+def order_truths(truth, params):
+    if isinstance(truth, dict):
+        _truth = OrderedDict({p: truth[p] for p in params})
+        _truth['lnl'] = truth['lnl']
+    return _truth

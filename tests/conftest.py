@@ -23,12 +23,20 @@ def mock_data() -> MockData:
 
 
 class FakeData:
-    def __init__(self, inputs, func, search_space):
+    def __init__(self, inputs, model, search_space):
         self.inputs = inputs
-        self.func = func
-        self.outputs = func(inputs)
+        self.model = model
+        self.outputs = model.predict(inputs)
         self.search_space = search_space
+        self.truth = dict(x1=0.5, x2=-0.2)
 
+
+class DummyModel:
+    def __init__(self, f):
+        self.f = f
+
+    def predict(self, x):
+        return self.f(x)
 
 def _gaus2d(xy):
     """normalized 2D gaussian"""
@@ -43,6 +51,6 @@ def mock_inout_data() -> FakeData:
     from trieste.space import Box
     return FakeData(
         inputs=np.array([np.cos(radial), np.sin(radial)]).T,
-        func=_gaus2d,
+        model=DummyModel(_gaus2d),
         search_space=Box((-1, -1), (1, 1)),
     )

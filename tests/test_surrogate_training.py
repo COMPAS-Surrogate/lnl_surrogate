@@ -1,5 +1,5 @@
 import tensorflow as tf
-from trieste.acquisition.function import PredictiveVariance, ExpectedImprovement
+from trieste.acquisition.function import  ExpectedImprovement
 
 import numpy as np
 from lnl_surrogate.surrogate import train, load
@@ -18,6 +18,7 @@ def test_1d(mock_data, tmpdir, model_type):
         n_rounds=1,
         n_pts_per_round=1,
         outdir=outdir,
+        truth=mock_data.truth,
     )
     assert res is not None
     model = load(outdir)
