@@ -1,12 +1,23 @@
 import tensorflow as tf
-from trieste.acquisition.function import  ExpectedImprovement
+from trieste.acquisition.function import ExpectedImprovement
 
 import numpy as np
 from lnl_surrogate.surrogate import train, load
 import pytest
+from scipy.stats import norm
+from lnl_surrogate.surrogate.setup_optimizer import McZGrid
+
+np.random.seed(0)
+
 
 @pytest.mark.parametrize('model_type', ['gp', 'deepgp'])
-def test_1d(mock_data, tmpdir, model_type):
+def test_1d(monkeypatch, mock_data, tmpdir, model_type):
+    NORM = norm(loc=0, scale=1)
+    def mockreturn(*args, **kwargs):
+        return NORM.rvs(1), NORM.rvs(1)
+
+    monkeypatch.setattr(McZGrid, "lnl", mockreturn)
+
     outdir = f'{tmpdir}/{model_type}'
     res = train(
         model_type=model_type,
