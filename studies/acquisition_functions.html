@@ -1,0 +1,658 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Bayesian Optimization for GPs &#8212; LnL-Computer</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-thebe.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystyle.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/clipboard.min.js"></script>
+    <script src="../_static/copybutton.js"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../_static/design-tabs.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = ".thebe,.cell"
+const thebe_selector_input = "pre"
+const thebe_selector_output = ".output, .cell_output"
+</script>
+    <script async="async" src="../_static/sphinx-thebe.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'studies/acquisition_functions';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+
+<a class="navbar-brand logo" href="../README.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">LnL-Computer</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../README.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Bayesian...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="bayesian-optimization-for-gps">
+<h1>Bayesian Optimization for GPs<a class="headerlink" href="#bayesian-optimization-for-gps" title="Permalink to this heading">#</a></h1>
+<p>GPs can provide a reconstruction of an unknown function from sparse measurements</p>
+<p>Additionally, the GP posterior predictive mean, <span class="math notranslate nohighlight">\(\mu\)</span>, and posterior predictive variance, <span class="math notranslate nohighlight">\(\sigma\)</span>, can be used to derive an <em>acquisition function</em>, <span class="math notranslate nohighlight">\(\alpha(\mu,\sigma)\)</span>. <em>Acquisition functions</em> are useful in selecting the next point to observe from the model in optimization problems (active learning).</p>
+<p>We can select the next point using:</p>
+<div class="math notranslate nohighlight">
+\[ 
+x_{next}= \underset{x}{\arg\max}\frac{1}{N_{\rm{mcmc}}}∑_{i=1}^{N_{\rm{mcmc}}} \alpha(\mu^i,\sigma^i)
+\]</div>
+<p>where</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(N_{\rm{mcmc}}\)</span> is the total number of MCMC samples,</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mu^i\)</span> is the <em>i</em>-th sample posterior predictive mean, and</p></li>
+<li><p><span class="math notranslate nohighlight">\(\sigma^i\)</span> is the <em>i</em>-th sample posterior predictive variance.</p></li>
+</ul>
+<p>There are several acquisition functions that can be used.</p>
+<section id="acquisition-functions">
+<h2>Acquisition functions<a class="headerlink" href="#acquisition-functions" title="Permalink to this heading">#</a></h2>
+<p>An acquisition function is a function that maps the posterior predictive mean and variance to a scalar value. The scalar value is used to select the next point to observe from the model.</p>
+<p>In general, we will write the acquisition function as <span class="math notranslate nohighlight">\(\alpha(\mu,\sigma)\)</span>, where <span class="math notranslate nohighlight">\(\mu\)</span> is the posterior predictive mean and <span class="math notranslate nohighlight">\(\sigma\)</span> is the posterior predictive variance.</p>
+<section id="penalizing-recent-observations">
+<h3>Penalizing Recent Observations<a class="headerlink" href="#penalizing-recent-observations" title="Permalink to this heading">#</a></h3>
+<p>We can add in a <em>penalty factor</em> based on the recently observed points to avoid sampling the same region of the function space repeatedly.</p>
+<p>This can be tacked on to <em>some</em> acquisition function as follows:</p>
+<div class="math notranslate nohighlight">
+\[ 
+\alpha(\mu,\sigma) - \lambda\ \gamma(x, \vec{X_{\rm r}})
+\]</div>
+<p>where <span class="math notranslate nohighlight">\(\lambda\)</span> is some penalty factor and <span class="math notranslate nohighlight">\(\gamma(x, \vec{X_{\rm r}})\)</span> is the penalty for point <span class="math notranslate nohighlight">\(x\)</span> based on their distance to the recently visited points <span class="math notranslate nohighlight">\(\vec{X_{\rm r}}\)</span>.</p>
+</section>
+<section id="the-upper-confidence-bound-ucb">
+<h3>The Upper Confidence Bound (UCB)<a class="headerlink" href="#the-upper-confidence-bound-ucb" title="Permalink to this heading">#</a></h3>
+<p>The upper confidence bound (UCB) acquisition function is defined as</p>
+<div class="math notranslate nohighlight">
+\[
+\alpha_{\rm{UCB}}^i(\mu^i, \sigma^i)= \mu^i\pm\sqrt{\beta\ \sigma^i}\qquad
+\]</div>
+<p>The coefficient <span class="math notranslate nohighlight">\(\beta\)</span> determines an exploitation-exploration trade-off.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The primary goal of UCB is to find a global minima/maxima rather than to reconstruct the entire function accurately.</p>
+</div>
+<p>This is an animation of using UCB to help choose the next points for a GP
+<img alt="" src="https://user-images.githubusercontent.com/15642823/262271178-9d36eb7b-10b6-445c-9147-f5d0758713d0.gif" /></p>
+<p>This is the same animation but with adding in a penalty factor:
+<img alt="" src="https://user-images.githubusercontent.com/15642823/262335925-4df4f33b-9168-4bf7-8fd2-f59b81b26060.gif" /></p>
+<p>A drawback of this method is that it requires an update of the GP model after each new observation. This can be computationally expensive.</p>
+<p>Here are some more examples:</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p></p></th>
+<th class="head"><p></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>D1</p></td>
+<td><p><img alt="d1_ucb" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/e1943785-7ea4-4079-99d3-29abb2041a1d" /></p></td>
+</tr>
+<tr class="row-odd"><td><p>D2</p></td>
+<td><p><img alt="d2_ucb" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/42e89e23-1e5b-44e0-a78b-259f52869c16" /></p></td>
+</tr>
+<tr class="row-even"><td><p>D3</p></td>
+<td><p><img alt="d3_ucb" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/d6184215-0e05-4388-88bb-82228ea6b200" /></p></td>
+</tr>
+</tbody>
+</table>
+<section id="batched-ucb-qucb">
+<h4>Batched UCB (qUCB)<a class="headerlink" href="#batched-ucb-qucb" title="Permalink to this heading">#</a></h4>
+<p>In MCMC-based GP, we obtain a separate multivariate normal posterior for each set of sampled kernel hyperparameters.
+Hence, we can create a separate UCB acquisition function for each posterior, and then acquire a batch of new points.</p>
+<p>The following are two animations made with different random seeds (no penalty factor).</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><img alt="d1_goodqUCB" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/2be19245-50e4-482a-8979-e171ae33103b" /></p></td>
+</tr>
+<tr class="row-odd"><td><p><img alt="d1_badqUCB" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/cb9a7e54-c71b-4d4d-8229-387f2f53450e" /></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="thompson-sampling">
+<h3>Thompson Sampling<a class="headerlink" href="#thompson-sampling" title="Permalink to this heading">#</a></h3>
+<p>Thompson Sampling uses the following logic:</p>
+<ul class="simple">
+<li><p>Fit the GP to the observations we have</p></li>
+<li><p>Draw one GP sample (a function) from the posterior</p></li>
+<li><p>Greedily choose the next point x with respect to the sample</p></li>
+</ul>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Thompson_sampling">See wikipeda</a></p>
+<p>As this method is probabilistic, it does not need to be updated after each new observation.</p>
+<p>Here are some examples:</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p></p></th>
+<th class="head"><p></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>D1</p></td>
+<td><p><img alt="d1_th" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/97bc210f-c29c-4b12-8c7f-a3bb8b5abd47" /></p></td>
+</tr>
+<tr class="row-odd"><td><p>D2</p></td>
+<td><p><img alt="d2_th" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/7e9a36a5-d4d6-4593-a9d3-2ce706ccb5dc" /></p></td>
+</tr>
+<tr class="row-even"><td><p>D3</p></td>
+<td><p><img alt="d3_th" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/aa33ad19-e249-44d8-b5ee-f628a12266a8" /></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="uncertainty-based-exploration-ue">
+<h3>Uncertainty-based exploration (UE)<a class="headerlink" href="#uncertainty-based-exploration-ue" title="Permalink to this heading">#</a></h3>
+<p>This acquisition function aims at reducing the uncertainty of the GP model. It is defined as</p>
+<div class="math notranslate nohighlight">
+\[
+\alpha_{\rm{UE}}^i(\sigma^i)= \sigma^i
+\]</div>
+<p>and helps to explore the function space in regions of high uncertainty.</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p></p></th>
+<th class="head"><p></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>D1</p></td>
+<td><p><img alt="d1_ue" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/9f6a16cb-0be3-4a0c-8472-53e30e3bcc63" /></p></td>
+</tr>
+<tr class="row-odd"><td><p>D2</p></td>
+<td><p><img alt="d2_ue" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/bd35eded-89c0-4f5c-a080-04010230e463" /></p></td>
+</tr>
+<tr class="row-even"><td><p>D3</p></td>
+<td><p><img alt="d3_ue" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/2691afbf-76d5-4168-b6e5-d5a210f31a2e" /></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="expected-improvement-ei">
+<h3>Expected Improvement (EI)<a class="headerlink" href="#expected-improvement-ei" title="Permalink to this heading">#</a></h3>
+<p>This also focuses on the maximisation/minimisation of the GP’s posterior predictive mean.
+It looks for the best value of <span class="math notranslate nohighlight">\(\mu\)</span> so far and then looks for the next point that has a higher probability of being better than the best value so far.</p>
+<div class="math notranslate nohighlight">
+\[
+\alpha_{\rm{EI}}^i(\mu^i, \sigma^i)= \sigma^i\ (u^i \mathcal{N}_{\rm CDF}(u^i) \mathcal{N}_{\rm PDF}(u^i)\ ,
+\]</div>
+<p>where <span class="math notranslate nohighlight">\(u^i = \frac{\mu^i - \mu_{\rm{best}}}{\sigma^i}\)</span> and <span class="math notranslate nohighlight">\(\mu_{\rm{best}}\)</span> is the best value of <span class="math notranslate nohighlight">\(\mu\)</span> so far.</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p></p></th>
+<th class="head"><p></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>D1</p></td>
+<td><p><img alt="d1_ei" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/2cda4d1b-6cb0-4ce5-96b5-48d9cbf0790c" /></p></td>
+</tr>
+<tr class="row-odd"><td><p>D2</p></td>
+<td><p><img alt="d2_ei" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/7ef729fc-8f95-40cb-b1a2-e1171eceec43" /></p></td>
+</tr>
+<tr class="row-even"><td><p>D3</p></td>
+<td><p><img alt="d3_ei" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/da7ad5b4-820b-4ce9-9680-1cf7cd50ed4f" /></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="table-of-all-anim">
+<h3>Table of all anim<a class="headerlink" href="#table-of-all-anim" title="Permalink to this heading">#</a></h3>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p></p></th>
+<th class="head"><p>D1</p></th>
+<th class="head"><p>D2</p></th>
+<th class="head"><p>D3</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>EI</p></td>
+<td><p><img alt="d1_ei" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/2cda4d1b-6cb0-4ce5-96b5-48d9cbf0790c" /></p></td>
+<td><p><img alt="d2_ei" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/7ef729fc-8f95-40cb-b1a2-e1171eceec43" /></p></td>
+<td><p><img alt="d3_ei" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/da7ad5b4-820b-4ce9-9680-1cf7cd50ed4f" /></p></td>
+</tr>
+<tr class="row-odd"><td><p>TH</p></td>
+<td><p><img alt="d1_th" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/97bc210f-c29c-4b12-8c7f-a3bb8b5abd47" /></p></td>
+<td><p><img alt="d2_th" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/7e9a36a5-d4d6-4593-a9d3-2ce706ccb5dc" /></p></td>
+<td><p><img alt="d3_th" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/aa33ad19-e249-44d8-b5ee-f628a12266a8" /></p></td>
+</tr>
+<tr class="row-even"><td><p>UCB</p></td>
+<td><p><img alt="d1_ucb" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/e1943785-7ea4-4079-99d3-29abb2041a1d" /></p></td>
+<td><p><img alt="d2_ucb" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/42e89e23-1e5b-44e0-a78b-259f52869c16" /></p></td>
+<td><p><img alt="d3_ucb" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/d6184215-0e05-4388-88bb-82228ea6b200" /></p></td>
+</tr>
+<tr class="row-odd"><td><p>UE</p></td>
+<td><p><img alt="d1_ue" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/9f6a16cb-0be3-4a0c-8472-53e30e3bcc63" /></p></td>
+<td><p><img alt="d2_ue" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/bd35eded-89c0-4f5c-a080-04010230e463" /></p></td>
+<td><p><img alt="d3_ue" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/2691afbf-76d5-4168-b6e5-d5a210f31a2e" /></p></td>
+</tr>
+<tr class="row-even"><td><p>MSE</p></td>
+<td><p><img alt="d1_mse" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/c1858c15-2219-40f5-975f-228e329f3f78" /></p></td>
+<td><p><img alt="d2_mse" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/881896f6-42e4-4ab9-b56c-c69190a60443" /></p></td>
+<td><p><img alt="d3_mse" src="https://github.com/avivajpeyi/compas_ml_surrogate/assets/15642823/58cb8d2c-315e-4276-ae2c-77a030655686" /></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./studies"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> 
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#acquisition-functions">Acquisition functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#penalizing-recent-observations">Penalizing Recent Observations</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-upper-confidence-bound-ucb">The Upper Confidence Bound (UCB)</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#batched-ucb-qucb">Batched UCB (qUCB)</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#thompson-sampling">Thompson Sampling</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#uncertainty-based-exploration-ue">Uncertainty-based exploration (UE)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#expected-improvement-ei">Expected Improvement (EI)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#table-of-all-anim">Table of all anim</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/studies/acquisition_functions.md">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2022.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
