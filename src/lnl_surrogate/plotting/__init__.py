@@ -2,6 +2,7 @@ from .plot_bo_metrics import plot_bo_metrics
 from .plot_bo_corners import plot_evaluations, plot_model_partial_dependence
 from .image_utils import make_gif
 
+import glob
 import os
 
 
@@ -24,3 +25,5 @@ def save_gifs(outdir):
     make_gif(f"{outdir}/bo_metrics_*.png", f"{outdir}/bo_metrics.gif")
     make_gif(f"{outdir}/eval_*.png", f"{outdir}/eval.gif")
     make_gif(f"{outdir}/func_*.png", f"{outdir}/func.gif")
+    if len(glob.glob(f"{outdir}/round_*.png"))>0:
+        make_gif(f"{outdir}/round_*.png", f"{outdir}/rounds.gif")

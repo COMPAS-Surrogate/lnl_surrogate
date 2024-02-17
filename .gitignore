@@ -21,7 +21,7 @@ out1
 out/
 studies/uncertainty_testing/out
 *_logs
-
+docs/studies/outdir/
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof

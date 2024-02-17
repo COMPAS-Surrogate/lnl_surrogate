@@ -1,10 +1,9 @@
 # COMPAS LnL Surrogate
 [![Coverage Status](https://coveralls.io/repos/github/COMPAS-Surrogate/lnl_surrogate/badge.svg?branch=main)](https://coveralls.io/github/COMPAS-Surrogate/lnl_surrogate?branch=main)
 
-Python package to make a LnL surrogate, given params and lnl as training data (optionally also LnL uncertainty)
-
-This package is more just a wrapper to several other surrogate codes (eg GPs, MLPs, DNNs, etc)
-
+This python package helps make an LnL surrogate for COMPAS SF-params given a set of BBH mergers.
+The surrogate is trained using active learning/bayesian optimisation techniques.
+This package acts as a bridge between the COMPAS [LnL computer](https://github.com/COMPAS-Surrogate/lnl_computer), surrogate modelling packages, and Bayesian optimisation packages.
 
 ## Installation
 

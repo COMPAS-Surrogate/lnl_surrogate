@@ -1,8 +1,13 @@
+from ..logger import logger
+from ..plotting import save_diagnostic_plots, save_gifs
+from .model import get_model
+from .setup_optimizer import setup_optimizer
+
 from typing import List, Callable
+
 from trieste.acquisition.rule import EfficientGlobalOptimization
 from trieste.bayesian_optimizer import OptimizationResult
 from trieste.acquisition import AcquisitionFunctionBuilder, AcquisitionRule
-import tensorflow as tf
 from trieste.logging import set_tensorboard_writer
 from trieste.models import TrainableProbabilisticModel
 from trieste.data import Dataset
@@ -10,15 +15,11 @@ from collections import OrderedDict
 import os
 from tqdm.auto import trange
 from trieste.models.utils import get_module_with_variables
-
-from ..logger import logger
-from ..plotting.plot_bo_metrics import plot_bo_metrics
-from ..plotting import save_diagnostic_plots
+import pandas as pd
 
 import numpy as np
 
-from .model import get_model
-from .setup_optimizer import setup_optimizer
+import tensorflow as tf
 
 __all__ = ["train", "load"]
 
@@ -36,7 +37,9 @@ def train(
         n_pts_per_round: int = 10,
         outdir: str = 'outdir',
         model_plotter: Callable = None,
-        truth=dict()
+        truth=dict(),
+        noise_level: float = 1e-5,
+        save_plots: bool = True,
 ) -> OptimizationResult:
     """
     Train a surrogate model using the given data and parameters.
@@ -58,26 +61,26 @@ def train(
 
     _setup_tf_logging(outdir)
     bo, data = setup_optimizer(mcz_obs, compas_h5_filename, params, n_init)
-    model = get_model(model_type, data, bo._search_space)
+    model = get_model(model_type, data, bo._search_space, likelihood_variance=noise_level)
     learning_rules = [EfficientGlobalOptimization(aq_fn) for aq_fn in acquisition_fns]
 
+    regret_data = []
     result = None
     for round_idx in trange(n_rounds, desc='Optimization round'):
         rule: AcquisitionRule = learning_rules[round_idx % len(learning_rules)]
-        result: OptimizationResult = bo.optimize(n_pts_per_round, data, model, rule, track_state=False)
+        result: OptimizationResult = bo.optimize(n_pts_per_round, data, model, rule, track_state=False, )
         data: Dataset = result.try_get_final_dataset()
         model: TrainableProbabilisticModel = result.try_get_final_model()
-        # regret.append(result.try_get_final_regret())
-        save_diagnostic_plots(data, model, bo._search_space, outdir, f"round{round_idx}", truth)
+        regret_data.append(collect_regret_data(model, data))
+        # model values a the training points
+
+        if save_plots:
+            save_diagnostic_plots(data, model, bo._search_space, outdir, f"round{round_idx}", truth)
         if model_plotter:
             model_plotter(model, data, bo._search_space).savefig(f"{outdir}/round_{round_idx}.png")
 
-    if model_plotter:
-        # save gif in the save outdir
-        pass
-
     logger.info(f"Optimization complete, saving result and data to {outdir}")
-    _save(result, data, outdir)
+    _save(result, data, outdir, save_plots, regret_data)
     return result
 
 
@@ -93,7 +96,7 @@ def _setup_tf_logging(outdir: str):
     logger.debug(f"visualise optimization progress with `tensorboard --logdir={outdir}`")
 
 
-def _save(result: OptimizationResult, data: Dataset, outdir: str):
+def _save(result: OptimizationResult, data: Dataset, outdir: str, save_plots: bool, regret_data: list):
     model = result.try_get_final_model()
     module = get_module_with_variables(model)
     n_params = data.query_points.shape[1]
@@ -106,8 +109,12 @@ def _save(result: OptimizationResult, data: Dataset, outdir: str):
     outputs = data.observations.numpy()
 
 
+    regret_data = pd.DataFrame(regret_data)
+    regret_data.to_csv(f"{outdir}/regret.csv", index=False)
 
-    plot_bo_metrics(inputs, outputs).savefig(f"{outdir}/bo_metrics.png")
+    if save_plots:
+        save_gifs(outdir)
+
     np.savez(f"{outdir}/data.npz", inputs=inputs, outputs=outputs)
 
 
@@ -116,3 +123,29 @@ def order_truths(truth, params):
         _truth = OrderedDict({p: truth[p] for p in params})
         _truth['lnl'] = truth['lnl']
     return _truth
+
+
+def collect_regret_data(model: TrainableProbabilisticModel, data: Dataset):
+    # get the minimum value of the observations (and the corresponding input)
+    min_obs = tf.reduce_min(data.observations).numpy()
+    min_idx = tf.argmin(data.observations).numpy()[0]
+    min_input = data.query_points[min_idx].numpy()
+    # get the model predictions at the training points
+    model_values = model.predict(data.query_points)
+    # upper and lower bounds of the model predictions
+    model_mean = model_values[0].numpy()
+    model_std = model_values[1].numpy()
+    # get the lower bound of the model predictions
+    model_min = model_mean - model_std * 1.96
+    # get the model lowest predicion
+    min_model = tf.reduce_min(model_min).numpy()
+    # get model x at the lowest prediction
+    min_model_idx = tf.argmin(model_min).numpy()[0]
+    min_model_input = data.query_points[min_model_idx].numpy()
+
+    return dict(
+        min_obs=min_obs,
+        min_input=min_input,
+        min_model=min_model,
+        min_model_input=min_model_input
+    )

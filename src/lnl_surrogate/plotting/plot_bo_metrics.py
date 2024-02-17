@@ -28,8 +28,10 @@ def plot_bo_metrics(
 ) -> plt.Figure:
     """Plot the regret and distance of the surrogate model during the optimization."""
     if axes is None:
-        fig, axes = plt.subplots(2, 1, figsize=(6, 10), sharex=True)
+        fig, axes = plt.subplots(2, 1, figsize=(6, 7), sharex=True)
     fig = axes[0].get_figure()
+
+
     plot_convergence(objective_values, color, label, init_n_points, axes[0], truth)
     plot_distance(query_points, color, label, init_n_points, axes[1])
     fig.tight_layout()

@@ -33,6 +33,7 @@ dependencies = [
     "compas_python_utils@git+https://github.com/TeamCOMPAS/COMPAS.git",
     "lnl_computer@git+https://github.com/COMPAS-Surrogate/lnl_computer.git",
     "trieste[plotting]",
+    "scikit-optimize",
     "gpflow",
     "tensorflow",
     "pandas",
