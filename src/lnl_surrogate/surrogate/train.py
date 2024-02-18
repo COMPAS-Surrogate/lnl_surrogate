@@ -3,7 +3,7 @@ from ..plotting import save_diagnostic_plots, save_gifs
 from .model import get_model
 from .setup_optimizer import setup_optimizer
 
-from typing import List, Callable
+from typing import List, Callable, Dict
 
 from trieste.acquisition.rule import EfficientGlobalOptimization
 from trieste.bayesian_optimizer import OptimizationResult
@@ -57,7 +57,7 @@ def train(
 
     """
 
-    truth = order_truths(truth, params)
+    truth = _order_truths(truth, params)
 
     _setup_tf_logging(outdir)
     bo, data = setup_optimizer(mcz_obs, compas_h5_filename, params, n_init)
@@ -71,13 +71,10 @@ def train(
         result: OptimizationResult = bo.optimize(n_pts_per_round, data, model, rule, track_state=False, )
         data: Dataset = result.try_get_final_dataset()
         model: TrainableProbabilisticModel = result.try_get_final_model()
-        regret_data.append(collect_regret_data(model, data))
-        # model values a the training points
+        regret_data.append(_collect_regret_data(model, data))
 
         if save_plots:
-            save_diagnostic_plots(data, model, bo._search_space, outdir, f"round{round_idx}", truth)
-        if model_plotter:
-            model_plotter(model, data, bo._search_space).savefig(f"{outdir}/round_{round_idx}.png")
+            save_diagnostic_plots(data, model, bo._search_space, outdir, f"round{round_idx}", truth, model_plotter)
 
     logger.info(f"Optimization complete, saving result and data to {outdir}")
     _save(result, data, outdir, save_plots, regret_data)
@@ -118,14 +115,14 @@ def _save(result: OptimizationResult, data: Dataset, outdir: str, save_plots: bo
     np.savez(f"{outdir}/data.npz", inputs=inputs, outputs=outputs)
 
 
-def order_truths(truth, params):
+def _order_truths(truth, params)->OrderedDict:
     if isinstance(truth, dict):
         _truth = OrderedDict({p: truth[p] for p in params})
         _truth['lnl'] = truth['lnl']
     return _truth
 
 
-def collect_regret_data(model: TrainableProbabilisticModel, data: Dataset):
+def _collect_regret_data(model: TrainableProbabilisticModel, data: Dataset)->Dict:
     # get the minimum value of the observations (and the corresponding input)
     min_obs = tf.reduce_min(data.observations).numpy()
     min_idx = tf.argmin(data.observations).numpy()[0]

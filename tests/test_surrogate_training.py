@@ -9,7 +9,7 @@ from lnl_surrogate.surrogate.setup_optimizer import McZGrid
 from typing import Dict
 import matplotlib.pyplot as plt
 
-np.random.seed(0)
+np.random.seed(1)
 
 MINX, MAXX = 0.005, 0.015
 MIDX = (MINX + MAXX) / 2
@@ -50,10 +50,10 @@ def test_1d(monkeypatch, mock_data, tmpdir, model_type):
         model_type=model_type,
         mcz_obs=mock_data.observations.mcz,
         compas_h5_filename=mock_data.compas_filename,
-        acquisition_fns=[ExpectedImprovement()],
+        acquisition_fns=[PredictiveVariance()],
         params=['aSF'],
         n_init=2,
-        n_rounds=1,
+        n_rounds=10,
         n_pts_per_round=1,
         outdir=outdir,
         truth=dict(

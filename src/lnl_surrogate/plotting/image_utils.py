@@ -14,6 +14,9 @@ def __get_fnames(rgx: str):
 def make_gif(img_regex: str, savefn: str):
     assert savefn.endswith('.gif'), f"savefn must end with .gif"
     fnames = __get_fnames(img_regex)
+    if len(fnames) < 2:
+        logger.warning(f"{len(fnames)} images found for {img_regex} (no gif created)")
+        return
     logger.info(f"Images {img_regex} ({len(fnames)}) -> {savefn}")
     images = [Image.open(i) for i in __get_fnames(img_regex)]
     images[0].save(savefn, save_all=True, append_images=images[1:], duration=1000, loop=0)
