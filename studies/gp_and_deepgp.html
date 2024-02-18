@@ -321,14 +321,14 @@ document.write(`
 <h1>Example<a class="headerlink" href="#example" title="Permalink to this heading">#</a></h1>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">trieste.acquisition.function</span> <span class="kn">import</span> <span class="n">PredictiveVariance</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">trieste.acquisition.function</span> <span class="kn">import</span> <span class="n">PredictiveVariance</span><span class="p">,</span> <span class="n">ExpectedImprovement</span>
 
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">lnl_surrogate.surrogate</span> <span class="kn">import</span> <span class="n">train</span><span class="p">,</span> <span class="n">load</span>
+<span class="kn">from</span> <span class="nn">lnl_surrogate.surrogate</span> <span class="kn">import</span> <span class="n">train</span>
 <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
 <span class="kn">from</span> <span class="nn">lnl_surrogate.surrogate.setup_optimizer</span> <span class="kn">import</span> <span class="n">McZGrid</span>
-<span class="kn">from</span> <span class="nn">lnl_computer.mock_data</span> <span class="kn">import</span> <span class="n">MockData</span><span class="p">,</span> <span class="n">generate_mock_data</span>
+<span class="kn">from</span> <span class="nn">lnl_computer.mock_data</span> <span class="kn">import</span> <span class="n">generate_mock_data</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">os</span>
@@ -346,15 +346,7 @@ document.write(`
     <span class="n">sf_sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">sf_sample</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
     <span class="k">return</span> <span class="n">NORM</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span><span class="n">sf_sample</span><span class="p">),</span> <span class="mi">0</span>
 
-<span class="n">McZGrid</span><span class="o">.</span><span class="n">lnl</span> <span class="o">=</span> <span class="n">mock_lnl</span>
-<span class="n">mock_data</span> <span class="o">=</span> <span class="n">generate_mock_data</span><span class="p">(</span><span class="n">OUTDIR</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_res</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">search_space</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">plot_res</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">search_space</span><span class="p">):</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">MINX</span><span class="p">,</span> <span class="n">MAXX</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">true_y</span> <span class="o">=</span> <span class="n">NORM</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mf">1.0</span>
     <span class="n">model_y</span><span class="p">,</span> <span class="n">model_yunc</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -371,6 +363,16 @@ document.write(`
     <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">yup</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">ydown</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span> <span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;tab:orange&quot;</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span>
+
+<span class="n">McZGrid</span><span class="o">.</span><span class="n">lnl</span> <span class="o">=</span> <span class="n">mock_lnl</span>
+<span class="n">mock_data</span> <span class="o">=</span> <span class="n">generate_mock_data</span><span class="p">(</span><span class="n">OUTDIR</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">## Exploratory Acquisition Function </span>
 
 <span class="n">res</span> <span class="o">=</span> <span class="n">train</span><span class="p">(</span>
     <span class="n">model_type</span><span class="o">=</span><span class="s1">&#39;gp&#39;</span><span class="p">,</span>
@@ -392,277 +394,45 @@ document.write(`
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"version_major": 2, "version_minor": 0, "model_id": "ff645ed075a34e468326eb0ff5eef41c"}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2024-02-17 20:44:54.194047: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:44:54.381061: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:44:54.382479: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:44:54.420964: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-2024-02-17 20:44:55.654615: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/logdet/diag_part_grad/diag/logdet/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/logdet/diag_part_grad/diag/logdet/diag_part/k}}]]
-2024-02-17 20:44:55.685973: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/set_diag/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/set_diag/set_diag/k}}]]
-2024-02-17 20:44:55.687498: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/set_diag/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/set_diag/set_diag/k}}]]
-2024-02-17 20:44:55.706928: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/diag/diag_part/k}}]]
-2024-02-17 20:44:57.499792: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:44:57.673068: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:44:57.674736: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:44:57.710501: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">## Explotative Acquisition Function</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">train</span><span class="p">(</span>
+    <span class="n">model_type</span><span class="o">=</span><span class="s1">&#39;gp&#39;</span><span class="p">,</span>
+    <span class="n">mcz_obs</span><span class="o">=</span><span class="n">mock_data</span><span class="o">.</span><span class="n">observations</span><span class="o">.</span><span class="n">mcz</span><span class="p">,</span>
+    <span class="n">compas_h5_filename</span><span class="o">=</span><span class="n">mock_data</span><span class="o">.</span><span class="n">compas_filename</span><span class="p">,</span>
+    <span class="n">acquisition_fns</span><span class="o">=</span><span class="p">[</span><span class="n">ExpectedImprovement</span><span class="p">()],</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;aSF&#39;</span><span class="p">],</span>
+    <span class="n">n_init</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">n_rounds</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">n_pts_per_round</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">outdir</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">OUTDIR</span><span class="si">}</span><span class="s2">/gp&quot;</span><span class="p">,</span>
+    <span class="n">truth</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">aSF</span><span class="o">=</span><span class="n">MIDX</span><span class="p">,</span>
+        <span class="n">lnl</span><span class="o">=</span><span class="n">mock_lnl</span><span class="p">(</span><span class="n">sf_sample</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;aSF&#39;</span><span class="p">:</span> <span class="n">MIDX</span><span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">*-</span><span class="mf">1.0</span>
+    <span class="p">),</span>
+    <span class="n">model_plotter</span><span class="o">=</span><span class="n">plot_res</span><span class="p">,</span>
+    <span class="n">noise_level</span><span class="o">=</span><span class="mf">1e-3</span>
+<span class="p">)</span>
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Optimization completed without errors
-</pre></div>
-</div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2024-02-17 20:45:00.803755: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:00.976409: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:00.977649: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:01.013458: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-2024-02-17 20:45:02.459759: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:02.633181: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:02.634402: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:02.670141: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Optimization completed without errors
-</pre></div>
-</div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2024-02-17 20:45:05.738000: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:05.910925: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:05.912075: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:07.367829: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-2024-02-17 20:45:08.800607: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:08.970723: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:08.971953: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:09.006267: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Optimization completed without errors
-</pre></div>
-</div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2024-02-17 20:45:12.040021: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:12.218186: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:12.219413: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:12.255403: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-2024-02-17 20:45:13.707993: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:13.877611: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:13.878757: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:13.913507: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Optimization completed without errors
-</pre></div>
-</div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2024-02-17 20:45:16.918796: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:17.089145: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:17.090379: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:17.125049: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-2024-02-17 20:45:18.583048: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:18.751932: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:18.753307: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:18.787329: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Optimization completed without errors
-</pre></div>
-</div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2024-02-17 20:45:21.842430: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:22.015295: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:22.016553: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:22.051377: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-2024-02-17 20:45:23.535287: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:23.707364: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:23.709685: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:23.744043: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Optimization completed without errors
-</pre></div>
-</div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/Users/avaj0001/Documents/projects/compas_dev/COSMIC_INT/lnl_surrogate/src/lnl_surrogate/plotting/plot_bo_metrics.py:31: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`). Consider using `matplotlib.pyplot.close()`.
-  fig, axes = plt.subplots(2, 1, figsize=(6, 10), sharex=True)
-2024-02-17 20:45:26.850879: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:27.019723: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:27.021050: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:27.055418: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-2024-02-17 20:45:28.523071: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:28.695926: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:28.697056: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:28.731725: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Optimization completed without errors
-</pre></div>
-</div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2024-02-17 20:45:31.877587: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:32.046379: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:32.047602: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:32.081554: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-2024-02-17 20:45:33.546076: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:33.716296: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:33.717494: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:33.751288: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Optimization completed without errors
-</pre></div>
-</div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2024-02-17 20:45:36.761829: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:36.936055: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:36.937348: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:36.972036: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-2024-02-17 20:45:38.432594: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:38.603464: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:38.604813: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:38.639600: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Optimization completed without errors
-</pre></div>
-</div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2024-02-17 20:45:42.364358: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:42.536065: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:42.537409: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:42.572573: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-2024-02-17 20:45:44.048231: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_1_grad/set_diag/diag_part_1/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_1_grad/set_diag/diag_part_1/k}}]]
-2024-02-17 20:45:44.218502: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:44.219748: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/set_diag_grad/Reshape/set_diag/k&#39; with dtype int32
-	 [[{{node gradients/set_diag_grad/Reshape/set_diag/k}}]]
-2024-02-17 20:45:44.256031: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;gradients/diag_part_grad/set_diag/diag_part/k&#39; with dtype int32
-	 [[{{node gradients/diag_part_grad/set_diag/diag_part/k}}]]
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Optimization completed without errors
-|2024-02-17 20:45:46,476|lnl_surrogate.logger|INFO| Optimization complete, saving result and data to outdir/gp
-</pre></div>
-</div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>2024-02-17 20:45:46.729389: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;query_points&#39; with dtype double and shape [?,1]
-	 [[{{node query_points}}]]
-2024-02-17 20:45:46.757399: I tensorflow/core/common_runtime/executor.cc:1197] [/device:CPU:0] (DEBUG INFO) Executor start aborting (this does not indicate an error and you can ignore this message): INVALID_ARGUMENT: You must feed a value for placeholder tensor &#39;serving_default_query_points&#39; with dtype double and shape [?,1]
-	 [[{{node serving_default_query_points}}]]
-</pre></div>
-</div>
-<img alt="../_images/8d47c973a653f1db754ac1d68c4e7e746772dc5db428d16fe2ec2ac86c31715d.png" src="../_images/8d47c973a653f1db754ac1d68c4e7e746772dc5db428d16fe2ec2ac86c31715d.png" />
-<img alt="../_images/f7cce2d3b8a76ef5f2bac1b16ec26d02429ed1d9887e49691a51c25ad35065c8.png" src="../_images/f7cce2d3b8a76ef5f2bac1b16ec26d02429ed1d9887e49691a51c25ad35065c8.png" />
-<img alt="../_images/fe8d77c29789dec0f84153fe2f6ffadf0046ac9ce5d600b7a5b5341f9dd25c0e.png" src="../_images/fe8d77c29789dec0f84153fe2f6ffadf0046ac9ce5d600b7a5b5341f9dd25c0e.png" />
-<img alt="../_images/da6b3a8fd789ef8436e31288caa16c1c80e9b5cf6afe1e041d96374b1182b1aa.png" src="../_images/da6b3a8fd789ef8436e31288caa16c1c80e9b5cf6afe1e041d96374b1182b1aa.png" />
-<img alt="../_images/03ab800e38f7ab632e9f625bcdbb8df36676fb7f34fec46439863ba2e950a991.png" src="../_images/03ab800e38f7ab632e9f625bcdbb8df36676fb7f34fec46439863ba2e950a991.png" />
-<img alt="../_images/f931fe0caf33881b6ee4e8ce42520a956a7b894716f302a1620218c6df741bd7.png" src="../_images/f931fe0caf33881b6ee4e8ce42520a956a7b894716f302a1620218c6df741bd7.png" />
-<img alt="../_images/745e2ca054f86adad05f71d0eb862d141088df71082743b68e4cf6d4f8d05c50.png" src="../_images/745e2ca054f86adad05f71d0eb862d141088df71082743b68e4cf6d4f8d05c50.png" />
-<img alt="../_images/4d574b21e7a0193f777d48c13c1413c8660211e5135c7cf04704bb0c51bfe0e0.png" src="../_images/4d574b21e7a0193f777d48c13c1413c8660211e5135c7cf04704bb0c51bfe0e0.png" />
-<img alt="../_images/6d943bcb5c1550481c86d294d8c5f5a4faa6e7bbbfc54a272571d0e2d8814421.png" src="../_images/6d943bcb5c1550481c86d294d8c5f5a4faa6e7bbbfc54a272571d0e2d8814421.png" />
-<img alt="../_images/8e99c128beabc0fa00484d62430a4f062ede106ae4e6ef80a7e5661f32d82c83.png" src="../_images/8e99c128beabc0fa00484d62430a4f062ede106ae4e6ef80a7e5661f32d82c83.png" />
-<img alt="../_images/2803788f9a43aae205e51215f6678aba491ed7a460cb1055ee368e6298c3b9b6.png" src="../_images/2803788f9a43aae205e51215f6678aba491ed7a460cb1055ee368e6298c3b9b6.png" />
-<img alt="../_images/fe9a64f83dc9c242facab00154ab317c3c7b22e8b8237a1b05031b7383922204.png" src="../_images/fe9a64f83dc9c242facab00154ab317c3c7b22e8b8237a1b05031b7383922204.png" />
-<img alt="../_images/5168abd6635ecd6c89fe2619a95f2cc211234871f45eaad35ae2fbe73cd85361.png" src="../_images/5168abd6635ecd6c89fe2619a95f2cc211234871f45eaad35ae2fbe73cd85361.png" />
-<img alt="../_images/4c10c897e395ae2d0ef887165119afb9ea0d5147aa9eec2c022f081a7774e2ac.png" src="../_images/4c10c897e395ae2d0ef887165119afb9ea0d5147aa9eec2c022f081a7774e2ac.png" />
-<img alt="../_images/9f7ea320932a26f0c22b002f641c1b258a1a4b5d4b9c406174895146e88dce83.png" src="../_images/9f7ea320932a26f0c22b002f641c1b258a1a4b5d4b9c406174895146e88dce83.png" />
-<img alt="../_images/1af9411de1ab5a664b59a763feb709f3b1400f7f601e8645889e04d29f62e83d.png" src="../_images/1af9411de1ab5a664b59a763feb709f3b1400f7f601e8645889e04d29f62e83d.png" />
-<img alt="../_images/54e7aabdddb00faecbfc7ca7dcc26109e68cd288f3536d27a7f4e57633fe62d2.png" src="../_images/54e7aabdddb00faecbfc7ca7dcc26109e68cd288f3536d27a7f4e57633fe62d2.png" />
-<img alt="../_images/6a6f437f7e0a45aafe3bef952989ac0588bed9b0b034e0dc01f70a74c825be12.png" src="../_images/6a6f437f7e0a45aafe3bef952989ac0588bed9b0b034e0dc01f70a74c825be12.png" />
-<img alt="../_images/f6fb0235764f872d32b0889f697abb8c1d4375d9cff02f3962afd0dcdfa63a5f.png" src="../_images/f6fb0235764f872d32b0889f697abb8c1d4375d9cff02f3962afd0dcdfa63a5f.png" />
-<img alt="../_images/3122da81769025d98cd3fc1cec328d004fbccd04c393af57fd3174ae748c6cc0.png" src="../_images/3122da81769025d98cd3fc1cec328d004fbccd04c393af57fd3174ae748c6cc0.png" />
-<img alt="../_images/d3a2fef6d996a2ca34d323a75af1e5fe058774fbf9804b763fb75b5dac884223.png" src="../_images/d3a2fef6d996a2ca34d323a75af1e5fe058774fbf9804b763fb75b5dac884223.png" />
-<img alt="../_images/fc495954b72376cd6a73a98adb3e83fed50e4c046744fe4f09697ceb348b59e1.png" src="../_images/fc495954b72376cd6a73a98adb3e83fed50e4c046744fe4f09697ceb348b59e1.png" />
-<img alt="../_images/f2853ce3c3c2640be4a805f44f255c8cbbe4adf24517accc73972e7712d9feb5.png" src="../_images/f2853ce3c3c2640be4a805f44f255c8cbbe4adf24517accc73972e7712d9feb5.png" />
-<img alt="../_images/5ba8b8d9dbcd2531d9d464430bd06d31f0595ca06277f90ca2681840860c2ec8.png" src="../_images/5ba8b8d9dbcd2531d9d464430bd06d31f0595ca06277f90ca2681840860c2ec8.png" />
-<img alt="../_images/fd5100f238cdb103aabe97967f451c101aebc39ca102c94b1d507417abe3ebdb.png" src="../_images/fd5100f238cdb103aabe97967f451c101aebc39ca102c94b1d507417abe3ebdb.png" />
-<img alt="../_images/885aabde7a1c7d5570a69bb07db7883289889e0ffdcc34f9327e55193141981e.png" src="../_images/885aabde7a1c7d5570a69bb07db7883289889e0ffdcc34f9327e55193141981e.png" />
-<img alt="../_images/d422dfaf9f7ddba10cc1540261f5a3d2a0b465f0f28dc9df2ca8ae52aa2967dc.png" src="../_images/d422dfaf9f7ddba10cc1540261f5a3d2a0b465f0f28dc9df2ca8ae52aa2967dc.png" />
-<img alt="../_images/1419afd323ae6224709e3f92632f7c4480b9c8280543582aadd9cb507a24ccea.png" src="../_images/1419afd323ae6224709e3f92632f7c4480b9c8280543582aadd9cb507a24ccea.png" />
-<img alt="../_images/ad093cd40fca3310e62351da399477271b41e2458a62a059f9ee4539cd36ae1e.png" src="../_images/ad093cd40fca3310e62351da399477271b41e2458a62a059f9ee4539cd36ae1e.png" />
-<img alt="../_images/b37fdc397f6f1f1ff0893323023ab3f6118550ae9a8b27cffc012ff87ca21a26.png" src="../_images/b37fdc397f6f1f1ff0893323023ab3f6118550ae9a8b27cffc012ff87ca21a26.png" />
-<img alt="../_images/0340d8fbd31843b9045506b33645a24bdf1cac2ad686f3f0fb069dd5dd1eacbb.png" src="../_images/0340d8fbd31843b9045506b33645a24bdf1cac2ad686f3f0fb069dd5dd1eacbb.png" />
-<img alt="../_images/98de02c97d099f0cace523b7689b56e2b34cba8c22ba2f8a3a5d6b55b5c459e3.png" src="../_images/98de02c97d099f0cace523b7689b56e2b34cba8c22ba2f8a3a5d6b55b5c459e3.png" />
-<img alt="../_images/3578f9ffbf1461449d77866d8305e6530278bd2bd4b867abdd86c96fff594cb5.png" src="../_images/3578f9ffbf1461449d77866d8305e6530278bd2bd4b867abdd86c96fff594cb5.png" />
-<img alt="../_images/f04ae8ed318e6b0f822722e864f18b16c1aabd926852287a34146e0ef445730d.png" src="../_images/f04ae8ed318e6b0f822722e864f18b16c1aabd926852287a34146e0ef445730d.png" />
-<img alt="../_images/86617f45ec0c3c22916d05bab098eeb2b542e64d1e866d78a87be1927838befe.png" src="../_images/86617f45ec0c3c22916d05bab098eeb2b542e64d1e866d78a87be1927838befe.png" />
-<img alt="../_images/a50bd83b324928f5811a6c32306c741706ff30c35bc390f58aba036da451fb26.png" src="../_images/a50bd83b324928f5811a6c32306c741706ff30c35bc390f58aba036da451fb26.png" />
-<img alt="../_images/856dd456b82bb0134d30d4700d0a69e98ed1e5776a5b4310212239d3593249c5.png" src="../_images/856dd456b82bb0134d30d4700d0a69e98ed1e5776a5b4310212239d3593249c5.png" />
-<img alt="../_images/1cc5fa03dff3d456424ceaa77f2f2814d47892bb48da2af36654a1f645a634f6.png" src="../_images/1cc5fa03dff3d456424ceaa77f2f2814d47892bb48da2af36654a1f645a634f6.png" />
-<img alt="../_images/097049184aed4fd660f63f51f1103fe1a853dd82ab4512b32e688dd58015b4ec.png" src="../_images/097049184aed4fd660f63f51f1103fe1a853dd82ab4512b32e688dd58015b4ec.png" />
-<img alt="../_images/9728e2012c7463405affa1763e45a4d8e266cbb0438f73533045ccfa02d0981c.png" src="../_images/9728e2012c7463405affa1763e45a4d8e266cbb0438f73533045ccfa02d0981c.png" />
-<img alt="../_images/01fb094ecf4c2b06bac51b31c71083febeda94b964ca51c292299702d3a314f4.png" src="../_images/01fb094ecf4c2b06bac51b31c71083febeda94b964ca51c292299702d3a314f4.png" />
 </div>
 </div>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Exploratory Acquisition</p></th>
+<th class="head"><p>Exploitative Acquisition</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><img alt="Exploratory" src="../_images/train_explore.gif" /></p></td>
+<td><p><img alt="Exploitative" src="../_images/train_exploit.gif" /></p></td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Regret" src="studies/regret.png" /></p>
 </section>
 
     <script type="text/x-thebe-config">
