@@ -46,6 +46,7 @@ def plot_regret(data: pd.DataFrame, color: str = 'tab:blue', label: str = 'Regre
         axes[0].axhline(0, color='black', lw=2, zorder=-10)
         axes[0].set_xlim(*xlim)
 
+
         # inset axe to show last N iterations
         idx = len(data) - N_ZOOM
         axes[1].plot(data.index, obs_y, label=f"Training Sample ({label})", color=color)

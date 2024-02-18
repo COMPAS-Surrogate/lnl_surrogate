@@ -13,4 +13,3 @@ kwgs = dict(
 )
 
 plot_multiple_regrets(**kwgs, fname='regret.png', yzoom=0.002)
-plot_multiple_regrets(**kwgs, fname='regret.html')
