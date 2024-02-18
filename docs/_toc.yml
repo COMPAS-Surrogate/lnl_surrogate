@@ -1,4 +1,5 @@
 format: jb-book
 root: README.md
 chapters:
-  file: studies/gp
+- file: studies/example.ipynb
+- file: studies/acquisition_functions.md
