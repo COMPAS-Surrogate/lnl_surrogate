@@ -1,7 +1,7 @@
 # Book settings
 # Learn more at https://jupyterbook.org/customize/config.html
 
-title: LnL-Computer
+title: LnL-Surrogate
 author: Avi
 
 execute:
@@ -22,3 +22,4 @@ sphinx:
     - sphinx.ext.autodoc
   config:
     html_theme: pydata_sphinx_theme
+
