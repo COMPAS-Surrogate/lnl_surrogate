@@ -20,7 +20,7 @@ def plot_regret(data: pd.DataFrame, color: str = 'tab:blue', label: str = 'Regre
     if true_min is not None:
         model_y = data.min_model - true_min
         obs_y = data.min_obs - true_min
-        ylab = r'Bias (∆ LnL)'
+        ylab = r'Relative LnL (∆ LnL)'
     else:
         model_y = data.min_model
         obs_y = data.min_obs
