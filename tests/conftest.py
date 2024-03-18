@@ -4,7 +4,16 @@ import pytest
 from lnl_computer.mock_data import MockData, generate_mock_data
 import numpy as np
 from scipy.stats import multivariate_normal
+from lnl_surrogate.surrogate import train, load
+from lnl_surrogate.surrogate.setup_optimizer import McZGrid
+from scipy.stats import norm
+from typing import Dict
 
+np.random.seed(1)
+
+MINX, MAXX = 0.005, 0.015
+MIDX = (MINX + MAXX) / 2
+NORM = norm(MIDX, 0.003)
 
 
 TEST_DIR = "out_test"
@@ -54,3 +63,19 @@ def mock_inout_data() -> FakeData:
         model=DummyModel(_gaus2d),
         search_space=Box((-1, -1), (1, 1)),
     )
+
+
+def _mock_lnl(*args, **kwargs):
+    sf_sample: Dict = kwargs.get('sf_sample')
+    sf_sample = np.array(list(sf_sample.values()))
+    return NORM.logpdf(sf_sample), 0
+
+def _mock_lnl_truth():
+    return dict(
+            aSF=MIDX,
+            lnl=(_mock_lnl(sf_sample={'aSF': MIDX})[0] * -1.0)[0]
+        )
+
+@pytest.fixture
+def monkeypatch_lnl(monkeypatch):
+    monkeypatch.setattr(McZGrid, "lnl", _mock_lnl)
