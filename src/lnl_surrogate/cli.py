@@ -35,33 +35,13 @@ def cli_train(
         save_plots,
         truth,
 ):
-    if mcz_obs is None:
-        mcz_obs = MockObservation.from_compas_h5(compas_h5_filename).mcz
-    elif isinstance(mcz_obs, str):
-        mcz_obs = MockObservation.from_npz(mcz_obs).mcz
-    else:
-        raise ValueError("mcz_obs must be a npz filename or None")
-
-    if truth is not None:
-        with open(truth, 'r') as f:
-            truth = json.load(f)
-
-    _acquisition_fns = []
-    for acq in acquisition_fns:
-        if acq == "PredictiveVariance" or acq == "pv":
-            _acquisition_fns.append(PredictiveVariance())
-        elif acq == "ExpectedImprovement" or acq == "ei":
-            _acquisition_fns.append(ExpectedImprovement())
-        else:
-            raise ValueError(f"Unknown acquisition function: {acq}")
-
     train(
         model_type='gp',
         mcz_obs=mcz_obs,
         compas_h5_filename=compas_h5_filename,
         params=param,
         outdir=outdir,
-        acquisition_fns=_acquisition_fns,
+        acquisition_fns=acquisition_fns,
         n_init=n_init,
         n_rounds=n_rounds,
         n_pts_per_round=n_pts_per_round,
