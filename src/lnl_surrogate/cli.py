@@ -1,8 +1,4 @@
-import json
-
 import click
-from lnl_computer.observation.mock_observation import MockObservation
-from trieste.acquisition import ExpectedImprovement, PredictiveVariance
 
 from .surrogate.train import train
 
