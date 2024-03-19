@@ -1,2 +1,2 @@
-from .train import train
 from .lnl_surrogate import LnLSurrogate
+from .train import train

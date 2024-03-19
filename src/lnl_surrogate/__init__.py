@@ -1,2 +1,2 @@
-from .logger import  logger
-from .surrogate import train, LnLSurrogate
+from .logger import logger
+from .surrogate import LnLSurrogate, train

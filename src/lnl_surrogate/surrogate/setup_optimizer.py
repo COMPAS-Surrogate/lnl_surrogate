@@ -1,24 +1,25 @@
 from typing import List, Tuple
-import trieste
-from trieste.observer import Observer
-from trieste.objectives import mk_observer
-from trieste.bayesian_optimizer import BayesianOptimizer
-from trieste.space import SearchSpace
-import tensorflow as tf
-
-from lnl_computer.cosmic_integration.mcz_grid import McZGrid
-from lnl_computer.cosmic_integration.star_formation_paramters import get_star_formation_prior
 
 import numpy as np
+import tensorflow as tf
+import trieste
+from lnl_computer.cosmic_integration.mcz_grid import McZGrid
+from lnl_computer.cosmic_integration.star_formation_paramters import (
+    get_star_formation_prior,
+)
+from trieste.bayesian_optimizer import BayesianOptimizer
+from trieste.objectives import mk_observer
+from trieste.observer import Observer
+from trieste.space import SearchSpace
 
 __all__ = ["setup_optimizer"]
 
 
 def setup_optimizer(
-        mcz_obs: np.ndarray,
-        compas_h5_filename: str,
-        params: List[str],
-        n_init: int = 5,
+    mcz_obs: np.ndarray,
+    compas_h5_filename: str,
+    params: List[str],
+    n_init: int = 5,
 ) -> Tuple[BayesianOptimizer, trieste.data.Dataset]:
     search_space = _get_search_space(params)
     observer = _generate_lnl_observer(mcz_obs, compas_h5_filename, params)
@@ -28,7 +29,9 @@ def setup_optimizer(
     return bo, init_data
 
 
-def _generate_lnl_observer(mcz_obs: np.ndarray, compas_h5_filename: str, params: List[str]) -> Observer:
+def _generate_lnl_observer(
+    mcz_obs: np.ndarray, compas_h5_filename: str, params: List[str]
+) -> Observer:
     def _f(x):
         if isinstance(x, tf.Tensor):
             x = x.numpy()
@@ -39,7 +42,9 @@ def _generate_lnl_observer(mcz_obs: np.ndarray, compas_h5_filename: str, params:
                 compas_h5_path=compas_h5_filename,
                 sf_sample={params[i]: _xi[i] for i in range(len(params))},
                 n_bootstraps=0,
-            )[0] * -1 for _xi in x
+            )[0]
+            * -1
+            for _xi in x
         ]
         _t = tf.convert_to_tensor(lnls, dtype=tf.float64)
         return tf.reshape(_t, (-1, 1))

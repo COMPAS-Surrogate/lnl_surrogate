@@ -15,13 +15,16 @@ TRUTHS_FNAME = "truths.json"
 
 class LnLSurrogate(Likelihood):
     def __init__(
-            self,
-            model: tf.keras.Model, data: pd.DataFrame, truths: Dict[str, float] = {}):
+        self,
+        model: tf.keras.Model,
+        data: pd.DataFrame,
+        truths: Dict[str, float] = {},
+    ):
         super().__init__()
         self.model = model
         self.data = data
         self.truths = truths
-        self.lnl_at_true = self.truths.get('lnl', 0)
+        self.lnl_at_true = self.truths.get("lnl", 0)
         self.param_keys = list(data.columns)[:-1]  # the last column is the lnl
         self.parameters = {k: np.nan for k in self.param_keys}
 
@@ -40,7 +43,9 @@ class LnLSurrogate(Likelihood):
         n_params = data.query_points.shape[1]
         module.predict = tf.function(
             model.predict,
-            input_signature=[tf.TensorSpec(shape=[None, n_params], dtype=tf.float64)],
+            input_signature=[
+                tf.TensorSpec(shape=[None, n_params], dtype=tf.float64)
+            ],
         )
         tf.saved_model.save(module, f"{outdir}/{MODEL_FNAME}")
         model = tf.saved_model.load(f"{outdir}/{MODEL_FNAME}")
@@ -51,7 +56,7 @@ class LnLSurrogate(Likelihood):
         # make the inputs into columns of a dataframe with the parameter names as the column names
         dataset = pd.DataFrame(inputs, columns=params)
         # add the outputs to the dataframe
-        dataset['lnl'] = outputs
+        dataset["lnl"] = outputs
 
         return cls(model, dataset, truths)
 

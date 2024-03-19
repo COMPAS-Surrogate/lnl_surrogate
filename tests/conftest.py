@@ -1,12 +1,12 @@
 import os
+from typing import Dict
 
+import numpy as np
 import pytest
 from lnl_computer.mock_data import MockData, generate_mock_data
-import numpy as np
-from scipy.stats import multivariate_normal
+from scipy.stats import multivariate_normal, norm
+
 from lnl_surrogate.surrogate.setup_optimizer import McZGrid
-from scipy.stats import norm
-from typing import Dict
 
 np.random.seed(1)
 
@@ -46,10 +46,11 @@ class DummyModel:
     def predict(self, x):
         return self.f(x)
 
+
 def _gaus2d(xy):
     """normalized 2D gaussian"""
     norm = multivariate_normal([0.5, -0.2], [[2.0, 0.3], [0.3, 0.5]])
-    res = -1 *  norm.pdf(xy)
+    res = -1 * norm.pdf(xy)
     return res, res
 
 
@@ -57,6 +58,7 @@ def _gaus2d(xy):
 def mock_inout_data() -> FakeData:
     radial = np.linspace(0, 2 * np.pi, 20)
     from trieste.space import Box
+
     return FakeData(
         inputs=np.array([np.cos(radial), np.sin(radial)]).T,
         model=DummyModel(_gaus2d),
@@ -65,15 +67,16 @@ def mock_inout_data() -> FakeData:
 
 
 def _mock_lnl(*args, **kwargs):
-    sf_sample: Dict = kwargs.get('sf_sample')
+    sf_sample: Dict = kwargs.get("sf_sample")
     sf_sample = np.array(list(sf_sample.values()))
     return NORM.logpdf(sf_sample), 0
 
+
 def _mock_lnl_truth():
     return dict(
-            aSF=MIDX,
-            lnl=(_mock_lnl(sf_sample={'aSF': MIDX})[0] * -1.0)[0]
-        )
+        aSF=MIDX, lnl=(_mock_lnl(sf_sample={"aSF": MIDX})[0] * -1.0)[0]
+    )
+
 
 @pytest.fixture
 def monkeypatch_lnl(monkeypatch):

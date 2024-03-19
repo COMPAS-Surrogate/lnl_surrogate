@@ -1,4 +1,4 @@
-# Bayesian Optimization for GPs 
+# Bayesian Optimization for GPs
 
 
 
@@ -9,9 +9,9 @@ Additionally, the GP posterior predictive mean, $\mu$, and posterior predictive 
 
 We can select the next point using:
 
-$$ 
+$$
 x_{next}= \underset{x}{\arg\max}\frac{1}{N_{\rm{mcmc}}}∑_{i=1}^{N_{\rm{mcmc}}} \alpha(\mu^i,\sigma^i)
-$$ 
+$$
 
 where
 - $N_{\rm{mcmc}}$ is the total number of MCMC samples,
@@ -27,13 +27,13 @@ An acquisition function is a function that maps the posterior predictive mean an
 
 In general, we will write the acquisition function as $\alpha(\mu,\sigma)$, where $\mu$ is the posterior predictive mean and $\sigma$ is the posterior predictive variance.
 
-### Penalizing Recent Observations 
+### Penalizing Recent Observations
 
-We can add in a _penalty factor_ based on the recently observed points to avoid sampling the same region of the function space repeatedly. 
+We can add in a _penalty factor_ based on the recently observed points to avoid sampling the same region of the function space repeatedly.
 
 This can be tacked on to _some_ acquisition function as follows:
 
-$$ 
+$$
 \alpha(\mu,\sigma) - \lambda\ \gamma(x, \vec{X_{\rm r}})
 $$
 
@@ -81,7 +81,7 @@ Hence, we can create a separate UCB acquisition function for each posterior, and
 The following are two animations made with different random seeds (no penalty factor).
 |     |
 |-----|
-|![d1_goodqUCB] | 
+|![d1_goodqUCB] |
 |![d1_badqUCB] |
 
 
@@ -99,7 +99,7 @@ Thompson Sampling uses the following logic:
 
 [See wikipeda](https://en.wikipedia.org/wiki/Thompson_sampling)
 
-As this method is probabilistic, it does not need to be updated after each new observation. 
+As this method is probabilistic, it does not need to be updated after each new observation.
 
 Here are some examples:
 
@@ -121,11 +121,11 @@ $$
 and helps to explore the function space in regions of high uncertainty.
 
 
-|     |          |   
-|-----|----------|   
-| D1  | ![d1_ue] |   
-| D2  | ![d2_ue] |   
-| D3  | ![d3_ue] |   
+|     |          |
+|-----|----------|
+| D1  | ![d1_ue] |
+| D2  | ![d2_ue] |
+| D3  | ![d3_ue] |
 
 ### Expected Improvement (EI)
 
@@ -138,11 +138,11 @@ $$
 
 where $u^i = \frac{\mu^i - \mu_{\rm{best}}}{\sigma^i}$ and $\mu_{\rm{best}}$ is the best value of $\mu$ so far.
 
-|     |          |   
-|-----|----------|   
-| D1  | ![d1_ei] |   
-| D2  | ![d2_ei] |   
-| D3  | ![d3_ei] |   
+|     |          |
+|-----|----------|
+| D1  | ![d1_ei] |
+| D2  | ![d2_ei] |
+| D3  | ![d3_ei] |
 
 
 
@@ -163,7 +163,7 @@ where $u^i = \frac{\mu^i - \mu_{\rm{best}}}{\sigma^i}$ and $\mu_{\rm{best}}$ is 
 
 
 
-                                         
+
 
 
 

@@ -1,22 +1,22 @@
+import corner
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.pyplot import cm
-import corner
 
 
 def _scatter_and_color_by_order(*args, **kwargs):
     x, y = args[:2]
-    range = kwargs.get('range', None)
-    ax = kwargs['ax']
+    range = kwargs.get("range", None)
+    ax = kwargs["ax"]
     if range is None:
         range = [[x.min(), x.max()], [y.min(), y.max()]]
-    colors = cm.get_cmap('viridis')(np.linspace(0, 1, len(x)))
+    colors = cm.get_cmap("viridis")(np.linspace(0, 1, len(x)))
     ax.scatter(x, y, zorder=-1, c=colors)
-    corner.core._set_xlim(kwargs['new_fig'], ax, range[0])
-    corner.core._set_ylim(kwargs['new_fig'], ax, range[1])
+    corner.core._set_xlim(kwargs["new_fig"], ax, range[0])
+    corner.core._set_ylim(kwargs["new_fig"], ax, range[1])
 
 
-def plot_evaluation_corner(pts:np.ndarray)->plt.Figure:
+def plot_evaluation_corner(pts: np.ndarray) -> plt.Figure:
     """
     Plot the evaluation matrix --> a corner plot of the parameters,
     colored by the order in which they were evaluated.

@@ -1,26 +1,29 @@
 import json
 import os
 from collections import OrderedDict
-from typing import List, Callable, Dict, Union, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from lnl_computer.observation.mock_observation import MockObservation
 from tqdm.auto import trange
 from trieste.acquisition import AcquisitionRule
-from trieste.acquisition.function import PredictiveVariance, ExpectedImprovement
+from trieste.acquisition.function import (
+    ExpectedImprovement,
+    PredictiveVariance,
+)
 from trieste.acquisition.rule import EfficientGlobalOptimization
 from trieste.bayesian_optimizer import OptimizationResult
 from trieste.data import Dataset
 from trieste.logging import set_tensorboard_writer
 from trieste.models import TrainableProbabilisticModel
 
-from lnl_computer.observation.mock_observation import MockObservation
+from ..logger import logger
+from ..plotting import save_diagnostic_plots, save_gifs
 from .lnl_surrogate import LnLSurrogate
 from .model import get_model
 from .setup_optimizer import setup_optimizer
-from ..logger import logger
-from ..plotting import save_diagnostic_plots, save_gifs
 
 __all__ = ["train"]
 
@@ -29,37 +32,37 @@ ACQ_FUN_TYPE = List[Union[PredictiveVariance, ExpectedImprovement]]
 
 class Trainer:
     def __init__(
-            self,
-            model_type: str,
-            compas_h5_filename: str,
-            params=None,
-            mcz_obs: Optional[Union[str, np.ndarray]] = None,
-            acquisition_fns=None,
-            n_init: Optional[int] = 5,
-            n_rounds: Optional[int] = 5,
-            n_pts_per_round: Optional[int] = 10,
-            outdir: Optional[str] = 'outdir',
-            model_plotter: Optional[Callable] = None,
-            truth: Optional[Union[Dict[str, float], str]] = None,
-            noise_level: Optional[float] = 1e-5,
-            save_plots: Optional[bool] = True,
+        self,
+        model_type: str,
+        compas_h5_filename: str,
+        params=None,
+        mcz_obs: Optional[Union[str, np.ndarray]] = None,
+        acquisition_fns=None,
+        n_init: Optional[int] = 5,
+        n_rounds: Optional[int] = 5,
+        n_pts_per_round: Optional[int] = 10,
+        outdir: Optional[str] = "outdir",
+        model_plotter: Optional[Callable] = None,
+        truth: Optional[Union[Dict[str, float], str]] = None,
+        noise_level: Optional[float] = 1e-5,
+        save_plots: Optional[bool] = True,
     ):
         """
-            Train a surrogate model using the given data and parameters.
-            :param model_type: one of 'gp' or 'deepgp'
-            :param mcz_obs: the observed MCZ values
-            :param compas_h5_filename: the filename of the compas data
-            :param params: the parameters to use [aSF, dSF, sigma0, muz]
-            :param acquisition_fns: the acquisition functions to use
-            :param n_init: the number of initial points to use
-            :param n_rounds: the number of rounds of optimization to perform
-            :param n_pts_per_round: the number of points to evaluate per round
-            :param outdir: the output directory
-            :param model_plotter: a function to plot the model
-            :return: the optimization result
+        Train a surrogate model using the given data and parameters.
+        :param model_type: one of 'gp' or 'deepgp'
+        :param mcz_obs: the observed MCZ values
+        :param compas_h5_filename: the filename of the compas data
+        :param params: the parameters to use [aSF, dSF, sigma0, muz]
+        :param acquisition_fns: the acquisition functions to use
+        :param n_init: the number of initial points to use
+        :param n_rounds: the number of rounds of optimization to perform
+        :param n_pts_per_round: the number of points to evaluate per round
+        :param outdir: the output directory
+        :param model_plotter: a function to plot the model
+        :return: the optimization result
         """
         if params is None:
-            params = ['aSF', 'dSF', 'sigma0', 'muz']
+            params = ["aSF", "dSF", "sigma0", "muz"]
         self.params = params
         self.outdir = outdir
         self.__setup_logger()
@@ -76,9 +79,19 @@ class Trainer:
         self.save_plots = save_plots
         self.noise_level = noise_level
 
-        self.optimizer, self.data = setup_optimizer(self.mcz_obs, compas_h5_filename, params, n_init)
-        self.model = get_model(model_type, self.data, self.search_space, likelihood_variance=self.noise_level)
-        self.learning_rules = [EfficientGlobalOptimization(aq_fn) for aq_fn in self.acquisition_fns]
+        self.optimizer, self.data = setup_optimizer(
+            self.mcz_obs, compas_h5_filename, params, n_init
+        )
+        self.model = get_model(
+            model_type,
+            self.data,
+            self.search_space,
+            likelihood_variance=self.noise_level,
+        )
+        self.learning_rules = [
+            EfficientGlobalOptimization(aq_fn)
+            for aq_fn in self.acquisition_fns
+        ]
 
         self.regret_data = []
         self.result = None
@@ -90,7 +103,9 @@ class Trainer:
     @mcz_obs.setter
     def mcz_obs(self, mcz_obs):
         if mcz_obs is None:
-            mcz_obs = MockObservation.from_compas_h5(self.compas_h5_filename).mcz
+            mcz_obs = MockObservation.from_compas_h5(
+                self.compas_h5_filename
+            ).mcz
         elif isinstance(mcz_obs, str):
             mcz_obs = MockObservation.from_npz(mcz_obs).mcz
         elif not isinstance(mcz_obs, np.ndarray):
@@ -105,13 +120,14 @@ class Trainer:
     def acquisition_fns(self, acquisition_fns):
         self._acquisition_fns = []
 
-        if isinstance(acquisition_fns[0], PredictiveVariance) or isinstance(acquisition_fns[0], ExpectedImprovement):
+        if isinstance(acquisition_fns[0], PredictiveVariance) or isinstance(
+            acquisition_fns[0], ExpectedImprovement
+        ):
             self._acquisition_fns = acquisition_fns
             return
 
         if acquisition_fns is None:
-            acquisition_fns = ["PredictiveVariance",
-                               "ExpectedImprovement"]
+            acquisition_fns = ["PredictiveVariance", "ExpectedImprovement"]
 
         for acq in acquisition_fns:
             if acq == "PredictiveVariance" or acq == "pv":
@@ -130,30 +146,40 @@ class Trainer:
 
         self._truth = OrderedDict()
         if isinstance(truth, str):
-            with open(truth, 'r') as f:
+            with open(truth, "r") as f:
                 truth = json.load(f)
 
         if isinstance(truth, dict):
             self._truth = OrderedDict({p: truth[p] for p in self.params})
-            self._truth['lnl'] = truth['lnl']
+            self._truth["lnl"] = truth["lnl"]
 
     @property
     def search_space(self):
         return self.optimizer._search_space
 
     def train_loop(self):
-        for round_idx in trange(self.n_rounds, desc='Optimization round'):
+        for round_idx in trange(self.n_rounds, desc="Optimization round"):
             self._ith_optimization_round(round_idx)
-        logger.info(f"Optimization complete, saving result and data to {self.outdir}")
+        logger.info(
+            f"Optimization complete, saving result and data to {self.outdir}"
+        )
         self.save()
 
     def _ith_optimization_round(self, i: int):
-        rule: AcquisitionRule = self.learning_rules[i % len(self.learning_rules)]
+        rule: AcquisitionRule = self.learning_rules[
+            i % len(self.learning_rules)
+        ]
         self.result: OptimizationResult = self.optimizer.optimize(
-            self.n_pts_per_round, self.data, self.model, rule,
-            track_state=False, )
+            self.n_pts_per_round,
+            self.data,
+            self.model,
+            rule,
+            track_state=False,
+        )
         self.data: Dataset = self.result.try_get_final_dataset()
-        self.model: TrainableProbabilisticModel = self.result.try_get_final_model()
+        self.model: TrainableProbabilisticModel = (
+            self.result.try_get_final_model()
+        )
         self.__update_regret_data()
 
         if self.save_plots:
@@ -164,11 +190,13 @@ class Trainer:
                 self.outdir,
                 f"round{i}",
                 self.truths,
-                self.model_plotter
+                self.model_plotter,
             )
 
     def save(self):
-        lnl_surrogate = LnLSurrogate.from_bo_result(self.result, self.params, self.truths, self.outdir)
+        lnl_surrogate = LnLSurrogate.from_bo_result(
+            self.result, self.params, self.truths, self.outdir
+        )
         lnl_surrogate.save(self.outdir)
 
         regret_data = pd.DataFrame(self.regret_data)
@@ -198,7 +226,7 @@ class Trainer:
             min_obs=min_obs,
             min_input=min_input,
             min_model=min_model,
-            min_model_input=min_model_input
+            min_model_input=min_model_input,
         )
         self.regret_data.append(current_regret)
 
@@ -206,7 +234,9 @@ class Trainer:
         os.makedirs(self.outdir, exist_ok=True)
         summary_writer = tf.summary.create_file_writer(self.outdir)
         set_tensorboard_writer(summary_writer)
-        logger.debug(f"visualise optimization progress with `tensorboard --logdir={self.outdir}`")
+        logger.debug(
+            f"visualise optimization progress with `tensorboard --logdir={self.outdir}`"
+        )
 
 
 def train(*args, **kwargs) -> OptimizationResult:
