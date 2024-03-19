@@ -1,5 +1,9 @@
-import click
+import os
 
+import click
+import matplotlib.pyplot as plt
+
+from .kl_distance_computer import get_list_of_kl_distances
 from .surrogate.train import train
 
 
@@ -100,3 +104,20 @@ def cli_train(
         save_plots=save_plots,
         truth=truth,
     )
+
+
+@click.command("plot_kl_distances")
+@click.option(
+    "--regex",
+    "-r",
+    type=str,
+    required=True,
+    help="The regex to match the result files",
+)
+def cli_plot_kl_distances(regex):
+    npts, kl_distances = get_list_of_kl_distances(regex)
+    plt.plot(npts, kl_distances)
+    plt.xlabel("Number of points")
+    plt.ylabel("KL Divergence")
+    dirname = os.path.dirname(regex)
+    plt.savefig(os.path.join(dirname, "kl_distances.png"))

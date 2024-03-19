@@ -10,7 +10,8 @@ from trieste.models.utils import get_module_with_variables
 
 MODEL_FNAME = "trained_model"
 DATA_FNAME = "data.csv"
-TRUTHS_FNAME = "truths.json"
+META_DATA = "meta_data.json"
+REGRET_FNAME = "regret.csv"
 
 
 class LnLSurrogate(Likelihood):
@@ -18,13 +19,17 @@ class LnLSurrogate(Likelihood):
         self,
         model: tf.keras.Model,
         data: pd.DataFrame,
+        regret: pd.DataFrame,
         truths: Dict[str, float] = {},
+        reference_lnl: float = 0,
     ):
         super().__init__()
         self.model = model
         self.data = data
         self.truths = truths
-        self.lnl_at_true = self.truths.get("lnl", 0)
+        self.regret = regret
+        self.true_lnl = truths.get("lnl", None)
+        self.reference_lnl = reference_lnl
         self.param_keys = list(data.columns)[:-1]  # the last column is the lnl
         self.parameters = {k: np.nan for k in self.param_keys}
 
@@ -33,10 +38,23 @@ class LnLSurrogate(Likelihood):
         y_mean, y_std = self.model.predict(params)
         y_mean = y_mean.numpy().flatten()[0]
         # this is the relative negative log likelihood, so we need to multiply by -1 and add the true likelihood
-        return y_mean * -1 + self.lnl_at_true
+        return (y_mean + self.reference_lnl) * -1
+
+    @property
+    def n_training_points(self) -> int:
+        return len(self.data)
 
     @classmethod
-    def from_bo_result(cls, bo_result, params, truths={}, outdir="outdir"):
+    def from_bo_result(
+        cls,
+        bo_result,
+        params,
+        regret,
+        truths={},
+        outdir="outdir",
+        reference_lnl=0,
+        label=None,
+    ):
         model = bo_result.try_get_final_model()
         data = bo_result.try_get_final_dataset()
         module = get_module_with_variables(model)
@@ -47,6 +65,11 @@ class LnLSurrogate(Likelihood):
                 tf.TensorSpec(shape=[None, n_params], dtype=tf.float64)
             ],
         )
+
+        if label is not None:
+            outdir = f"{outdir}/{label}"
+            os.makedirs(outdir, exist_ok=True)
+
         tf.saved_model.save(module, f"{outdir}/{MODEL_FNAME}")
         model = tf.saved_model.load(f"{outdir}/{MODEL_FNAME}")
 
@@ -58,22 +81,39 @@ class LnLSurrogate(Likelihood):
         # add the outputs to the dataframe
         dataset["lnl"] = outputs
 
-        return cls(model, dataset, truths)
+        regret.to_csv(f"{outdir}/{REGRET_FNAME}", index=False)
 
-    def save(self, outdir: str):
+        return cls(
+            model,
+            dataset,
+            regret=regret,
+            truths=truths,
+            reference_lnl=reference_lnl,
+        )
+
+    def save(self, outdir: str, label: str = None):
+        if label is not None:
+            outdir = f"{outdir}/{label}"
+            os.makedirs(outdir, exist_ok=True)
         tf.saved_model.save(self.model, f"{outdir}/{MODEL_FNAME}")
         self.data.to_csv(f"{outdir}/{DATA_FNAME}", index=False)
-        if self.truths:
-            with open(f"{outdir}/{TRUTHS_FNAME}", "w") as f:
-                json.dump(self.truths, f)
+        self.regret.to_csv(f"{outdir}/{REGRET_FNAME}", index=False)
+        with open(f"{outdir}/{META_DATA}", "w") as f:
+            meta_data = {"reference_lnl": self.reference_lnl, **self.truths}
+            json.dump(meta_data, f)
 
     @classmethod
-    def load(cls, outdir: str):
+    def load(cls, outdir: str, label: str = None):
+        if label is not None:
+            outdir = f"{outdir}/{label}"
         model = tf.saved_model.load(f"{outdir}/{MODEL_FNAME}")
         data = pd.read_csv(f"{outdir}/{DATA_FNAME}")
-        truths_fname = f"{outdir}/{TRUTHS_FNAME}"
-        truths = {}
-        if os.path.exists(truths_fname):
-            with open(truths_fname, "r") as f:
-                truths = json.load(f)
-        return cls(model, data, truths)
+        regret = pd.read_csv(f"{outdir}/{REGRET_FNAME}")
+        meta_fname = f"{outdir}/{META_DATA}"
+        meta_data = {}
+        if os.path.exists(meta_fname):
+            with open(meta_fname, "r") as f:
+                meta_data = json.load(f)
+        reference_lnl = meta_data.pop("reference_lnl", 0)
+        truths = meta_data
+        return cls(model, data, regret, truths, reference_lnl)

@@ -20,9 +20,12 @@ def setup_optimizer(
     compas_h5_filename: str,
     params: List[str],
     n_init: int = 5,
+    reference_lnl: float = 0,
 ) -> Tuple[BayesianOptimizer, trieste.data.Dataset]:
     search_space = _get_search_space(params)
-    observer = _generate_lnl_observer(mcz_obs, compas_h5_filename, params)
+    observer = _generate_lnl_observer(
+        mcz_obs, compas_h5_filename, params, reference_lnl
+    )
     x0 = search_space.sample(n_init)
     init_data = observer(x0)
     bo = BayesianOptimizer(observer, search_space)
@@ -30,7 +33,10 @@ def setup_optimizer(
 
 
 def _generate_lnl_observer(
-    mcz_obs: np.ndarray, compas_h5_filename: str, params: List[str]
+    mcz_obs: np.ndarray,
+    compas_h5_filename: str,
+    params: List[str],
+    reference_lnl: float = 0,
 ) -> Observer:
     def _f(x):
         if isinstance(x, tf.Tensor):
@@ -44,6 +50,7 @@ def _generate_lnl_observer(
                 n_bootstraps=0,
             )[0]
             * -1
+            - reference_lnl
             for _xi in x
         ]
         _t = tf.convert_to_tensor(lnls, dtype=tf.float64)

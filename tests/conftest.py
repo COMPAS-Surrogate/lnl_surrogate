@@ -69,13 +69,11 @@ def mock_inout_data() -> FakeData:
 def _mock_lnl(*args, **kwargs):
     sf_sample: Dict = kwargs.get("sf_sample")
     sf_sample = np.array(list(sf_sample.values()))
-    return NORM.logpdf(sf_sample), 0
+    return NORM.logpdf(sf_sample[0]), 0
 
 
 def _mock_lnl_truth():
-    return dict(
-        aSF=MIDX, lnl=(_mock_lnl(sf_sample={"aSF": MIDX})[0] * -1.0)[0]
-    )
+    return dict(aSF=MIDX, lnl=(_mock_lnl(sf_sample={"aSF": MIDX})[0] * -1.0))
 
 
 @pytest.fixture

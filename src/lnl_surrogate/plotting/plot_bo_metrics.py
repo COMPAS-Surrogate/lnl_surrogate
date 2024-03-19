@@ -59,6 +59,11 @@ def plot_distance(
             init_n_points, color="gray", linestyle="--", label="Initial points"
         )
 
+    if len(points) > 30:
+        # plot the last 30 points
+        n_calls = n_calls[-30:]
+        distances = distances[-30:]
+
     ax.plot(n_calls, distances, color=color, label=label)
     ax.set_xlabel("Num $f(x)$ calls ($n$)")
     ax.set_ylabel("Distance between consecutive $x$")
@@ -78,6 +83,12 @@ def plot_convergence(
 
     min_points = _min_point_per_iteration(points)
     n_calls = np.arange(len(points))
+
+    if len(points) > 30:
+        # plot the last 30 points
+        n_calls = n_calls[-30:]
+        min_points = min_points[-30:]
+
     if init_n_points:
         ax.axvline(
             init_n_points,

@@ -51,13 +51,13 @@ def plot_model_partial_dependence(
     res = _make_scipy_result(in_pts, out_pts, search_space, model)
 
     # increase these for higher resolution
-    plotting_kwargs["n_points"] = plotting_kwargs.get("n_points", 25)
-    plotting_kwargs["n_samples"] = plotting_kwargs.get("n_samples", 100)
+    plotting_kwargs["n_points"] = plotting_kwargs.get("n_points", 50)
+    plotting_kwargs["n_samples"] = plotting_kwargs.get("n_samples", 500)
     plotting_kwargs["levels"] = plotting_kwargs.get("levels", 5)
 
     ax = skopt_plot_objective(
         res,
-        sample_source="result",
+        sample_source="random",
         dimensions=labels,
         minimum=truths,
         **plotting_kwargs
@@ -72,20 +72,63 @@ def plot_evaluations(
     Plot the evaluation matrix --> a corner plot of the parameters,
     colored by the order in which they were evaluated.
     """
-    labels, _ = _get_param_labels(truth)
+    labels, tru_vals = _get_param_labels(truth)
+    # add truth to in_pts and out_pts
+    # if truth:
+    #     in_pts = np.vstack([in_pts, tru_vals])
+    #     out_pts = np.append(out_pts, truth['lnl'])
     res = _make_scipy_result(in_pts, out_pts, search_space, model)
     ax = skopt_plot_evaluations(res, dimensions=labels)
-    return _get_fig(ax)
+    fig = _get_fig(ax)
+    if truth:
+        n_dims = in_pts.shape[1]
+        # t_vals = np.array([tru_vals])
+        # overplot_lines(fig, t_vals, color="tab:orange")
+        # overplot_points(
+        #     fig,
+        #     [[np.nan if t is None else t for t in t_vals]],
+        #     marker="s",
+        #     color="tab:orange"
+        # )
+        for i in range(n_dims):
+            for j in range(n_dims):
+                if i == j:  # diagonal
+                    if n_dims == 1:
+                        ax_ = ax
+                    else:
+                        ax_ = ax[i, i]
+                    ax_.vlines(
+                        tru_vals[i], *ax_.get_ylim(), color="tab:orange"
+                    )
+                # lower triangle
+                elif i > j:
+                    ax_ = ax[i, j]
+                    ax_.vlines(
+                        tru_vals[j], *ax_.get_ylim(), color="tab:orange"
+                    )
+                    ax_.hlines(
+                        tru_vals[i], *ax_.get_xlim(), color="tab:orange"
+                    )
+                    ax_.scatter(
+                        tru_vals[j],
+                        tru_vals[i],
+                        c="tab:orange",
+                        s=50,
+                        lw=0.0,
+                        marker="s",
+                    )
+
+    return fig
 
 
 def _get_param_labels(truths):
-    labels, truths = None, None
+    labels, truth_vals = None, None
     if isinstance(truths, dict):
         # get dict without lnl key
         truths = {k: v for k, v in truths.items() if k != "lnl"}
         labels = list(truths.keys())
-        truths = list(truths.values())
-    return labels, truths
+        truth_vals = list(truths.values())
+    return labels, truth_vals
 
 
 def _get_fig(ax):
