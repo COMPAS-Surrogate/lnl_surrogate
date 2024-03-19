@@ -2,7 +2,7 @@ import click
 from click.testing import CliRunner
 from lnl_surrogate.cli import cli_train
 import numpy as np
-from lnl_surrogate.surrogate import load
+from lnl_surrogate import LnLSurrogate
 import tensorflow as tf
 from conftest import _mock_lnl_truth
 import json
@@ -29,6 +29,7 @@ def test_cli(monkeypatch_lnl, mock_data, tmpdir):
         "--truth", truth_fname
     ])
     assert result.exit_code == 0
-    model = load(outdir)
-    lnl, _ = model.predict(np.array([[0.1]]))
+    lnl_surr = LnLSurrogate.load(outdir)
+    lnl_surr.parameters.update({'aSF': 0.1})
+    lnl = lnl_surr.log_likelihood()
     assert isinstance(tf.squeeze(lnl).numpy(), float)

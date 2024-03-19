@@ -6,7 +6,7 @@ import pytest
 import tensorflow as tf
 from trieste.acquisition.function import PredictiveVariance
 
-from lnl_surrogate.surrogate import train, load
+from lnl_surrogate.surrogate import train, LnLSurrogate
 
 from conftest import MINX, MAXX, MIDX, NORM, _mock_lnl_truth
 
@@ -50,6 +50,7 @@ def test_1d(monkeypatch_lnl, mock_data, tmpdir, model_type):
         noise_level=1e-3
     )
     assert res is not None
-    model = load(outdir)
-    lnl, _ = model.predict(np.array([[0.1]]))
+    lnl_surr = LnLSurrogate.load(outdir)
+    lnl_surr.parameters.update({'aSF': 0.1})
+    lnl = lnl_surr.log_likelihood()
     assert isinstance(tf.squeeze(lnl).numpy(), float)

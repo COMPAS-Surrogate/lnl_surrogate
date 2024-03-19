@@ -7,24 +7,22 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tqdm.auto import trange
-from trieste.acquisition import AcquisitionFunctionBuilder, AcquisitionRule
+from trieste.acquisition import AcquisitionRule
 from trieste.acquisition.function import PredictiveVariance, ExpectedImprovement
 from trieste.acquisition.rule import EfficientGlobalOptimization
 from trieste.bayesian_optimizer import OptimizationResult
 from trieste.data import Dataset
 from trieste.logging import set_tensorboard_writer
 from trieste.models import TrainableProbabilisticModel
-from trieste.models.utils import get_module_with_variables
 
 from lnl_computer.observation.mock_observation import MockObservation
+from .lnl_surrogate import LnLSurrogate
 from .model import get_model
 from .setup_optimizer import setup_optimizer
 from ..logger import logger
 from ..plotting import save_diagnostic_plots, save_gifs
 
-__all__ = ["train", "load"]
-
-CACHED_RES_FNAME = "bo_result"
+__all__ = ["train"]
 
 ACQ_FUN_TYPE = List[Union[PredictiveVariance, ExpectedImprovement]]
 
@@ -123,7 +121,6 @@ class Trainer:
             else:
                 raise ValueError(f"Unknown acquisition function: {acq}")
 
-
     @property
     def truths(self) -> OrderedDict:
         return self._truth
@@ -131,7 +128,7 @@ class Trainer:
     @truths.setter
     def truths(self, truth):
 
-        self._truth = None
+        self._truth = OrderedDict()
         if isinstance(truth, str):
             with open(truth, 'r') as f:
                 truth = json.load(f)
@@ -171,24 +168,14 @@ class Trainer:
             )
 
     def save(self):
-        model = self.result.try_get_final_model()
-        module = get_module_with_variables(model)
-        n_params = self.data.query_points.shape[1]
-        module.predict = tf.function(
-            model.predict,
-            input_signature=[tf.TensorSpec(shape=[None, n_params], dtype=tf.float64)],
-        )
-        tf.saved_model.save(module, f"{self.outdir}/{CACHED_RES_FNAME}")
-        inputs = self.data.query_points.numpy()
-        outputs = self.data.observations.numpy()
+        lnl_surrogate = LnLSurrogate.from_bo_result(self.result, self.params, self.truths, self.outdir)
+        lnl_surrogate.save(self.outdir)
 
         regret_data = pd.DataFrame(self.regret_data)
         regret_data.to_csv(f"{self.outdir}/regret.csv", index=False)
 
         if self.save_plots:
             save_gifs(self.outdir)
-
-        np.savez(f"{self.outdir}/data.npz", inputs=inputs, outputs=outputs)
 
     def __update_regret_data(self):
         min_obs = tf.reduce_min(self.data.observations).numpy()
@@ -226,8 +213,3 @@ def train(*args, **kwargs) -> OptimizationResult:
     trainer = Trainer(*args, **kwargs)
     trainer.train_loop()
     return trainer.result
-
-
-def load(outdir: str) -> tf.keras.Model:
-    """Load the cached model from the given directory"""
-    return tf.saved_model.load(f"{outdir}/{CACHED_RES_FNAME}")

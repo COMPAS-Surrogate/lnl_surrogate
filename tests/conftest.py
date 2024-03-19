@@ -4,7 +4,6 @@ import pytest
 from lnl_computer.mock_data import MockData, generate_mock_data
 import numpy as np
 from scipy.stats import multivariate_normal
-from lnl_surrogate.surrogate import train, load
 from lnl_surrogate.surrogate.setup_optimizer import McZGrid
 from scipy.stats import norm
 from typing import Dict
