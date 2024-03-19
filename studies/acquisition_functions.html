@@ -352,7 +352,7 @@ document.write(`
 <p>Additionally, the GP posterior predictive mean, <span class="math notranslate nohighlight">\(\mu\)</span>, and posterior predictive variance, <span class="math notranslate nohighlight">\(\sigma\)</span>, can be used to derive an <em>acquisition function</em>, <span class="math notranslate nohighlight">\(\alpha(\mu,\sigma)\)</span>. <em>Acquisition functions</em> are useful in selecting the next point to observe from the model in optimization problems (active learning).</p>
 <p>We can select the next point using:</p>
 <div class="math notranslate nohighlight">
-\[ 
+\[
 x_{next}= \underset{x}{\arg\max}\frac{1}{N_{\rm{mcmc}}}∑_{i=1}^{N_{\rm{mcmc}}} \alpha(\mu^i,\sigma^i)
 \]</div>
 <p>where</p>
@@ -371,7 +371,7 @@ x_{next}= \underset{x}{\arg\max}\frac{1}{N_{\rm{mcmc}}}∑_{i=1}^{N_{\rm{mcmc}}}
 <p>We can add in a <em>penalty factor</em> based on the recently observed points to avoid sampling the same region of the function space repeatedly.</p>
 <p>This can be tacked on to <em>some</em> acquisition function as follows:</p>
 <div class="math notranslate nohighlight">
-\[ 
+\[
 \alpha(\mu,\sigma) - \lambda\ \gamma(x, \vec{X_{\rm r}})
 \]</div>
 <p>where <span class="math notranslate nohighlight">\(\lambda\)</span> is some penalty factor and <span class="math notranslate nohighlight">\(\gamma(x, \vec{X_{\rm r}})\)</span> is the penalty for point <span class="math notranslate nohighlight">\(x\)</span> based on their distance to the recently visited points <span class="math notranslate nohighlight">\(\vec{X_{\rm r}}\)</span>.</p>

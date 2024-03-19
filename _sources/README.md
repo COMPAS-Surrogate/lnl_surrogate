@@ -90,4 +90,3 @@ for acq_fn in acq_fns:
 [regret]: https://raw.githubusercontent.com/COMPAS-Surrogate/lnl_surrogate/main/docs/studies/regret.png
 [exploit_gif]: https://raw.githubusercontent.com/COMPAS-Surrogate/lnl_surrogate/main/docs/studies/train_exploit.gif
 [explore_gif]: https://raw.githubusercontent.com/COMPAS-Surrogate/lnl_surrogate/main/docs/studies/train_explore.gif
-
