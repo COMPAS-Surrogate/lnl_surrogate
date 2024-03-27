@@ -36,9 +36,8 @@ class LnLSurrogate(Likelihood):
     def log_likelihood(self) -> float:
         params = np.array([[self.parameters[k] for k in self.param_keys]])
         y_mean, y_std = self.model.predict(params)
-        y_mean = y_mean.numpy().flatten()[0]
-        # this is the relative negative log likelihood, so we need to multiply by -1 and add the true likelihood
-        return (y_mean + self.reference_lnl) * -1
+        neg_rel_lnl = y_mean.numpy().flatten()[0]
+        return neg_rel_lnl + self.reference_lnl
 
     @property
     def n_training_points(self) -> int:

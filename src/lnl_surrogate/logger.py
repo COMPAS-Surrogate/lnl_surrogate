@@ -1,34 +1,43 @@
 import logging
 import os
-import sys
+
+from lnl_computer.logger import logger as lnl_computer_logger
+from lnl_computer.logger import setup_logger
+
+"""Silence every unnecessary warning from tensorflow."""
+logging.getLogger("tensorflow").setLevel(logging.ERROR)
+os.environ["KMP_AFFINITY"] = "noverbose"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+try:
+    import tensorflow as tf
+
+    tf.get_logger().setLevel("ERROR")
+    tf.autograph.set_verbosity(3)
+except ModuleNotFoundError:
+    pass
+
+logger = setup_logger(__name__, "LNL-SURROGATE")
 
 
-def silence_tensorflow():
-    """Silence every unnecessary warning from tensorflow."""
-    logging.getLogger("tensorflow").setLevel(logging.ERROR)
-    os.environ["KMP_AFFINITY"] = "noverbose"
-    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-    # We wrap this inside a try-except block
-    # because we do not want to be the one package
-    # that crashes when TensorFlow is not installed
-    # when we are the only package that requires it
-    # in a given Jupyter Notebook, such as when the
-    # package import is simply copy-pasted.
-    try:
+def set_log_verbosity(verbosity: int, outdir: str):
+    os.makedirs(outdir, exist_ok=True)
+    logger.setLevel("ERROR")
+    lnl_computer_logger.setLevel("ERROR")
+
+    if verbosity > 0:
+        logger.setLevel("INFO")
+
+    if verbosity > 1:
+        lnl_computer_logger.setLevel("INFO")
+
+    if verbosity > 2:
         import tensorflow as tf
+        from trieste.logging import set_tensorboard_writer
 
-        tf.get_logger().setLevel("ERROR")
-        tf.autograph.set_verbosity(3)
-    except ModuleNotFoundError:
-        pass
-
-
-silence_tensorflow()
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-stream_handler = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter(
-    "|%(asctime)s|%(name)s|%(levelname)s| %(message)s"
-)
-stream_handler.setFormatter(formatter)
-logger.addHandler(stream_handler)
+        logger.setLevel("DEBUG")
+        lnl_computer_logger.setLevel("DEBUG")
+        summary_writer = tf.summary.create_file_writer(outdir)
+        set_tensorboard_writer(summary_writer)
+        logger.debug(
+            f"visualise optimization progress with `tensorboard --logdir={outdir}`"
+        )

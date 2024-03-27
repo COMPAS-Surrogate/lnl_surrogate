@@ -27,7 +27,7 @@ def tmpdir() -> str:
 
 @pytest.fixture
 def mock_data() -> MockData:
-    return generate_mock_data(outdir=TEST_DIR)
+    return generate_mock_data(outdir=TEST_DIR, duration=1)
 
 
 class FakeData:

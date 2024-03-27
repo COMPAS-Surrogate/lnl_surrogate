@@ -38,17 +38,15 @@ def _plot_res(model, data, search_space):
 # @pytest.mark.parametrize('model_type', ['gp', 'deepgp'])
 @pytest.mark.parametrize(
     "model_type",
-    [
-        "gp",
-    ],
+    ["gp", "deepgp"],
 )
 def test_1d(monkeypatch_lnl, mock_data, tmpdir, model_type):
     outdir = f"{tmpdir}/{model_type}"
     res = train(
         model_type=model_type,
-        mcz_obs=mock_data.observations.mcz,
+        mcz_obs_filename=mock_data.observations_filename,
         compas_h5_filename=mock_data.compas_filename,
-        acquisition_fns=[PredictiveVariance()],
+        acquisition_fns=["ei"],
         params=["aSF"],
         n_init=2,
         n_rounds=1,

@@ -24,10 +24,10 @@ from .surrogate.train import train
     default=["aSF", "dSF", "sigma0", "muz"],
 )
 @click.option(
-    "--mcz_obs",
+    "--mcz_obs_filename",
     type=str,
     required=False,
-    help="The observed mcz values (if None, will be generated from compas_h5_filename using default SF parameters)",
+    help="The observed mcz (npz) filename (if None, will be generated from compas_h5_filename using default SF parameters)",
 )
 @click.option(
     "--outdir",
@@ -81,7 +81,7 @@ from .surrogate.train import train
 )
 def cli_train(
     compas_h5_filename,
-    mcz_obs,
+    mcz_obs_filename,
     param,
     outdir,
     acquisition_fns,
@@ -93,7 +93,7 @@ def cli_train(
 ):
     train(
         model_type="gp",
-        mcz_obs=mcz_obs,
+        mcz_obs_filename=mcz_obs_filename,
         compas_h5_filename=compas_h5_filename,
         params=param,
         outdir=outdir,
