@@ -33,7 +33,9 @@ class DataManager:
     def _load_mock_observation(self) -> MockObservation:
         if self.mcz_obs_filename is None:
             return MockObservation.from_compas_h5(
-                self.compas_h5_filename, outdir=self.outdir
+                self.compas_h5_filename,
+                outdir=self.outdir,
+                duration=self.duration,
             )
         return MockObservation.from_npz(self.mcz_obs_filename)
 
@@ -52,15 +54,15 @@ class DataManager:
 
         if isinstance(truths, dict):
             _truths = truths
-        elif os.path.isfile(truths):
+        elif isinstance(truths, str) and os.path.isfile(truths):
             with open(truths, "r") as f:
                 _truths = json.load(f)
         else:
             _truths["lnl"] = self._compute_lnl_at_true(_truths)
 
-        if "muz" in truths:
+        if "muz" in _truths:
             _truths["mu_z"] = _truths.pop("muz")
-        if "sigma0" in truths:
+        if "sigma0" in _truths:
             _truths["sigma_0"] = _truths.pop("sigma0")
 
         ordered_t = OrderedDict({p: _truths[p] for p in self.params})

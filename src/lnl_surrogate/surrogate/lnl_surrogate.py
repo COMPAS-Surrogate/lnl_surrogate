@@ -34,10 +34,14 @@ class LnLSurrogate(Likelihood):
         self.parameters = {k: np.nan for k in self.param_keys}
 
     def log_likelihood(self) -> float:
+        """
+        gp_y = - (lnl - reference_lnl)
+        => lnl = reference_lnl - gp_y
+        """
         params = np.array([[self.parameters[k] for k in self.param_keys]])
         y_mean, y_std = self.model.predict(params)
         neg_rel_lnl = y_mean.numpy().flatten()[0]
-        return neg_rel_lnl + self.reference_lnl
+        return self.reference_lnl - neg_rel_lnl
 
     @property
     def n_training_points(self) -> int:

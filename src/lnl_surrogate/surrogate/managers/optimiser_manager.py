@@ -1,3 +1,4 @@
+import os
 from functools import partial
 from typing import Callable, List, Tuple, Union
 
@@ -15,6 +16,7 @@ from trieste.acquisition import (
     NegativeLowerConfidenceBound,
     PredictiveVariance,
 )
+from trieste.acquisition.function import function as acf
 from trieste.acquisition.rule import AcquisitionRule as Rule
 from trieste.acquisition.rule import EfficientGlobalOptimization
 from trieste.bayesian_optimizer import BayesianOptimizer
@@ -24,19 +26,12 @@ from trieste.models import TrainableProbabilisticModel
 from trieste.objectives import mk_observer
 from trieste.observer import Observer
 from trieste.space import SearchSpace
+from trieste.utils import DEFAULTS
 
 from ..model import get_model
 from .data_manager import DataManager
 
 __all__ = ["OptimisationManager"]
-
-_AF_MAP = dict(
-    ei=ExpectedImprovement,
-    nlcb=NegativeLowerConfidenceBound,
-    pv=PredictiveVariance,
-    dts=DiscreteThompsonSampling,
-    aei=AugmentedExpectedImprovement,
-)
 
 
 class OptimisationManager:
@@ -53,8 +48,17 @@ class OptimisationManager:
         self.n_init = n_init
 
         # setup optimisation variables
-        self.learning_rules = self.__load_rules(acquisition_fns)
         self.search_space = self._get_search_space()
+        self._acquisiton_fn = dict(
+            ei=ExpectedImprovement(search_space=self.search_space),
+            nlcb=NegativeLowerConfidenceBound(beta=1.96),
+            pv=PredictiveVariance(jitter=DEFAULTS.JITTER),
+            dts=DiscreteThompsonSampling(
+                num_search_space_samples=2000, num_query_points=4
+            ),
+            aei=AugmentedExpectedImprovement(),
+        )
+        self.learning_rules = self.__load_rules(acquisition_fns)
         self._neg_rel_lnl_fn = self.__create_neg_rel_lnl_fn()
         self.__observer = self.__generate_observer()
         self.init_data = self.__observer(self.search_space.sample(n_init))
@@ -81,13 +85,15 @@ class OptimisationManager:
 
     def __create_neg_rel_lnl_fn(self) -> Callable:
         """Create the negative relative log likelihood function."""
+        out = os.path.join(self._data_mngr.outdir, "out_mczgrids")
+        os.makedirs(out, exist_ok=True)
         f = partial(
             McZGrid.lnl,
             mcz_obs=self._data_mngr.mcz_obs,
             duration=self._data_mngr.duration,
             compas_h5_path=self._data_mngr.compas_h5_filename,
             n_bootstraps=0,
-            outdir=self._data_mngr.outdir,
+            outdir=out,
             clean=False,
         )
 
@@ -95,9 +101,13 @@ class OptimisationManager:
         ref_lnl = self._data_mngr.truths.get("lnl", 0)
 
         def _min_fn(_xi: np.ndarray):
+            """
+            We minimize gp_y = - (lnl - reference_lnl)
+            (Later we can undo this by lnl = reference_lnl - gp_y)
+            """
             pdict = {p[i]: _xi[i] for i in range(len(p))}
             lnl, _ = f(sf_sample=pdict)
-            return (ref_lnl - lnl) * -1
+            return -1 * (lnl - ref_lnl)
 
         return _min_fn
 
@@ -115,7 +125,7 @@ class OptimisationManager:
         self, acquisition_fns: List[Union[str, Callable]]
     ) -> List[Rule]:
         return [
-            EfficientGlobalOptimization(_AF_MAP.get(af, af))
+            EfficientGlobalOptimization(self._acquisiton_fn.get(af, af))
             for af in acquisition_fns
         ]
 

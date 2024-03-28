@@ -1,21 +1,17 @@
-import json
 import os
-import traceback
-from collections import OrderedDict
 from typing import Callable, Dict, List, Optional, Union
 
 import pandas as pd
+import tensorflow as tf
 from tqdm.auto import trange
-from trieste.acquisition import AcquisitionRule
+from trieste.acquisition import AcquisitionRule as Rule
 from trieste.bayesian_optimizer import OptimizationResult
-from trieste.data import Dataset
-from trieste.models import TrainableProbabilisticModel
 
-from ..logger import logger, set_log_verbosity
+from ..kl_distance_computer import plot_kl_distances
+from ..logger import Suppressor, logger, set_log_verbosity
 from ..plotting import save_diagnostic_plots, save_gifs
 from .lnl_surrogate import LnLSurrogate
-from .managers.data_manager import DataManager
-from .managers.optimiser import OptimisationManager
+from .managers import DataManager, OptimisationManager
 from .sample import sample_lnl_surrogate
 
 __all__ = ["train"]
@@ -38,7 +34,7 @@ class Trainer:
         truth: Optional[Union[Dict[str, float], str]] = None,
         noise_level: Optional[float] = 1e-5,
         save_plots: Optional[bool] = True,
-        verbose: Optional[int] = 1,
+        verbose: Optional[int] = 0,
     ):
         """
         Train a surrogate model using the given data and parameters.
@@ -57,6 +53,7 @@ class Trainer:
         logger.info("Initialising surrogate trainer...")
         os.makedirs(outdir, exist_ok=True)
         self.outdir = outdir
+        self.verbose = verbose
         set_log_verbosity(verbose, outdir)
 
         self.data_mngr = DataManager(
@@ -95,35 +92,47 @@ class Trainer:
         )
 
     def train_loop(self):
-        for round_idx in trange(self.n_rounds, desc="Optimization round"):
-            try:
-                self._ith_optimization_round(round_idx)
-            except Exception as e:
-                logger.warning(
-                    f"Error in round {round_idx}: {e} {traceback.format_exc()}"
-                )
+
+        pbar = trange(self.n_rounds, desc="Optimization round")
+        for round_idx in pbar:
+            rule = self.opt_mngr.get_ith_rule(round_idx)
+            rule_name = str(rule._builder).split("(")[0]
+            pbar.set_postfix_str(f"rule: {rule_name}")
+            with Suppressor(self.verbose):
+                self._ith_optimization_round(round_idx, rule)
+            # try:
+            #     self._ith_optimization_round(round_idx)
+            # except Exception as e:
+            #     logger.warning(
+            #         f"Error in round {round_idx}: {e} {traceback.format_exc()}"
+            #     )
 
         logger.info(
             f"Optimization complete, saving result and data to {self.outdir}"
         )
-        self.save_surrogate()
+        self.__save_surrogate()
 
         if self.save_plots:
             save_gifs(self.outdir)
 
-    def _ith_optimization_round(self, i: int):
+        plot_kl_distances(
+            regex=os.path.join(self.outdir, "out_mcmc/*json"),
+            outdir=f"{self.outdir}/plots",
+        )
+
+    def _ith_optimization_round(self, i: int, rule: Rule):
         # optimisation stage
         self.opt_mngr.optimize(
             model=self.model,
             data=self.data,
             n_pts=self.n_pts_per_round,
-            rule=self.opt_mngr.get_ith_rule(i),
+            rule=rule,
         )
         self.model, self.data = self.opt_mngr.get_optimised_model_and_data()
+        self.__post_round_actions(f"round{i}_{len(self.data)}pts")
 
-        # saving diagnostics
+    def __post_round_actions(self, label):
         self.__update_regret_data()
-        label = f"round{i}_{len(self.data)}pts"
         if self.save_plots:
             save_diagnostic_plots(
                 self.data,
@@ -135,14 +144,14 @@ class Trainer:
                 model_plotter=self.model_plotter,
                 reference_lnl=self.data_mngr.reference_lnl,
             )
-        self.save_surrogate(label=label)
+        self.__save_surrogate(label=label)
         sample_lnl_surrogate(
             f"{self.outdir}/{label}",
             outdir=os.path.join(self.outdir, f"out_mcmc"),
             label=label,
         )
 
-    def save_surrogate(self, label: Optional[str] = None):
+    def __save_surrogate(self, label: Optional[str] = None):
         lnl_surrogate = LnLSurrogate.from_bo_result(
             bo_result=self.opt_mngr.result,
             params=self.data_mngr.params,
@@ -183,4 +192,4 @@ class Trainer:
 def train(*args, **kwargs) -> OptimizationResult:
     trainer = Trainer(*args, **kwargs)
     trainer.train_loop()
-    return trainer.result
+    return trainer.opt_mngr.result
