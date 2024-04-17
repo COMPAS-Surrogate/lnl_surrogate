@@ -1,4 +1,5 @@
 import logging
+import os
 
 import bilby
 import matplotlib.pyplot as plt
@@ -54,7 +55,9 @@ def sample_lnl_surrogate(
             va="center",
             transform=fig.transFigure,
         )
-        fig.savefig(f"{outdir}/../plots/{label}_corner.png")
+        plot_dir = f"{outdir}/../plots"
+        os.makedirs(plot_dir, exist_ok=True)
+        fig.savefig(f"{plot_dir}/{label}_corner.png")
         plt.close(fig)
     except Exception as e:
         logging.warning(f"Failed to save corner plot: {e}")
