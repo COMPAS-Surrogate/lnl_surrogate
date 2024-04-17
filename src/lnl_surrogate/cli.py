@@ -30,6 +30,12 @@ from .surrogate.train import train
     help="The observed mcz values (if None, will be generated from compas_h5_filename using default SF parameters)",
 )
 @click.option(
+    "--duration",
+    type=float,
+    required=False,
+    default=1.0,
+)
+@click.option(
     "--outdir",
     "-o",
     type=str,
@@ -83,6 +89,7 @@ def cli_train(
     compas_h5_filename,
     mcz_obs,
     param,
+    duration,
     outdir,
     acquisition_fns,
     n_init,

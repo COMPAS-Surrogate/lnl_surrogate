@@ -18,14 +18,21 @@ __all__ = ["setup_optimizer"]
 def setup_optimizer(
     mcz_obs: np.ndarray,
     compas_h5_filename: str,
+    duration: float,
     params: List[str],
     n_init: int = 5,
     reference_lnl: float = 0,
 ) -> Tuple[BayesianOptimizer, trieste.data.Dataset]:
     search_space = _get_search_space(params)
-    observer = _generate_lnl_observer(
-        mcz_obs, compas_h5_filename, params, reference_lnl
+    kwgs = dict(
+        mcz_obs=mcz_obs,
+        compas_h5_filename=compas_h5_filename,
+        duration=duration,
+        params=params,
+        n_init=n_init,
+        reference_lnl=reference_lnl,
     )
+    observer = _generate_lnl_observer(**kwgs)
     x0 = search_space.sample(n_init)
     init_data = observer(x0)
     bo = BayesianOptimizer(observer, search_space)
@@ -35,6 +42,7 @@ def setup_optimizer(
 def _generate_lnl_observer(
     mcz_obs: np.ndarray,
     compas_h5_filename: str,
+    duration: float,
     params: List[str],
     reference_lnl: float = 0,
 ) -> Observer:
@@ -44,7 +52,7 @@ def _generate_lnl_observer(
         lnls = [
             McZGrid.lnl(
                 mcz_obs=mcz_obs,
-                duration=1,
+                duration=duration,
                 compas_h5_path=compas_h5_filename,
                 sf_sample={params[i]: _xi[i] for i in range(len(params))},
                 n_bootstraps=0,

@@ -40,6 +40,7 @@ class Trainer:
         params=None,
         mcz_obs: Optional[Union[str, np.ndarray]] = None,
         acquisition_fns=None,
+        duration: Optional[float] = 1.0,
         n_init: Optional[int] = 5,
         n_rounds: Optional[int] = 5,
         n_pts_per_round: Optional[int] = 10,
@@ -88,6 +89,7 @@ class Trainer:
         self.optimizer, self.data = setup_optimizer(
             self.mcz_obs,
             compas_h5_filename,
+            duration,
             params,
             n_init,
             self.reference_lnl,
