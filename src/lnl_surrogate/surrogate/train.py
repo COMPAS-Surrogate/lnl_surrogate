@@ -1,35 +1,20 @@
-import json
 import os
-import traceback
-from collections import OrderedDict
 from typing import Callable, Dict, List, Optional, Union
 
-import numpy as np
 import pandas as pd
 import tensorflow as tf
-from lnl_computer.observation.mock_observation import MockObservation
 from tqdm.auto import trange
-from trieste.acquisition import AcquisitionRule
-from trieste.acquisition.function import (
-    ExpectedImprovement,
-    PredictiveVariance,
-)
-from trieste.acquisition.rule import EfficientGlobalOptimization
+from trieste.acquisition import AcquisitionRule as Rule
 from trieste.bayesian_optimizer import OptimizationResult
-from trieste.data import Dataset
-from trieste.logging import set_tensorboard_writer
-from trieste.models import TrainableProbabilisticModel
 
-from ..logger import logger
+from ..kl_distance_computer import plot_kl_distances
+from ..logger import Suppressor, logger, set_log_verbosity
 from ..plotting import save_diagnostic_plots, save_gifs
 from .lnl_surrogate import LnLSurrogate
-from .model import get_model
+from .managers import DataManager, OptimisationManager
 from .sample import sample_lnl_surrogate
-from .setup_optimizer import setup_optimizer
 
 __all__ = ["train"]
-
-ACQ_FUN_TYPE = List[Union[PredictiveVariance, ExpectedImprovement]]
 
 
 class Trainer:
@@ -38,9 +23,9 @@ class Trainer:
         model_type: str,
         compas_h5_filename: str,
         params=None,
-        mcz_obs: Optional[Union[str, np.ndarray]] = None,
+        mcz_obs_filename: Optional[Union[str]] = None,
+        duration: Optional[float] = 1,
         acquisition_fns=None,
-        duration: Optional[float] = 1.0,
         n_init: Optional[int] = 5,
         n_rounds: Optional[int] = 5,
         n_pts_per_round: Optional[int] = 10,
@@ -49,13 +34,14 @@ class Trainer:
         truth: Optional[Union[Dict[str, float], str]] = None,
         noise_level: Optional[float] = 1e-5,
         save_plots: Optional[bool] = True,
+        verbose: Optional[int] = 0,
     ):
         """
         Train a surrogate model using the given data and parameters.
         :param model_type: one of 'gp' or 'deepgp'
         :param mcz_obs: the observed MCZ values
         :param compas_h5_filename: the filename of the compas data
-        :param params: the parameters to use [aSF, dSF, sigma0, muz]
+        :param params: the parameters to use [aSF, dSF, sigma0, muz] or dictionary of true values
         :param acquisition_fns: the acquisition functions to use
         :param n_init: the number of initial points to use
         :param n_rounds: the number of rounds of optimization to perform
@@ -65,205 +51,113 @@ class Trainer:
         :return: the optimization result
         """
         logger.info("Initialising surrogate trainer...")
-        if params is None:
-            params = ["aSF", "dSF", "sigma_0", "mu_z"]
-        self.params = params
-        self.truths = truth
+        os.makedirs(outdir, exist_ok=True)
         self.outdir = outdir
-        self.__setup_logger()
-        self.model_type = model_type
-        self.compas_h5_filename = compas_h5_filename
-        self.mcz_obs = mcz_obs
-        self.acquisition_fns = acquisition_fns
-        self.n_init = n_init
-        self.n_rounds = n_rounds
-        self.n_pts_per_round = n_pts_per_round
+        self.verbose = verbose
+        set_log_verbosity(verbose, outdir)
 
-        self.model_plotter = model_plotter
-
-        self.save_plots = save_plots
-        self.noise_level = noise_level
-
-        logger.info(f"Surrogate being built:{self}")
-        self.reference_lnl = self.truths.get("lnl", 0)
-        self.optimizer, self.data = setup_optimizer(
-            self.mcz_obs,
-            compas_h5_filename,
-            duration,
-            params,
-            n_init,
-            self.reference_lnl,
+        self.data_mngr = DataManager(
+            compas_h5_filename=compas_h5_filename,
+            duration=duration,
+            outdir=outdir,
+            mcz_obs_filename=mcz_obs_filename,
+            params=params,
+            truths=truth,
         )
-        self.model = get_model(
-            model_type,
-            self.data,
-            self.search_space,
-            likelihood_variance=self.noise_level,
+        self.opt_mngr = OptimisationManager(
+            datamanager=self.data_mngr,
+            acquisition_fns=acquisition_fns,
+            n_init=n_init,
+            model_type=model_type,
+            noise_level=noise_level,
         )
-        self.learning_rules = [
-            EfficientGlobalOptimization(aq_fn)
-            for aq_fn in self.acquisition_fns
-        ]
 
-        self.regret_data = []
-        self.result = None
+        self.n_rounds: int = n_rounds
+        self.n_pts_per_round: int = n_pts_per_round
+        self.model_plotter: Callable = model_plotter
+        self.save_plots: bool = save_plots
+        self.regret_data: List[Dict[str, float]] = []
+
+        # caching the initial data and model
+        self.model, self.data = self.opt_mngr.get_optimised_model_and_data()
 
     def __str__(self):
-        return f"Trainer(model_type={self.model_type}, params={self.params}, truths={self.truths}, pts=[init{self.n_init}, rnds={self.n_rounds}x{self.n_pts_per_round}pts)"
-
-    @property
-    def mcz_obs(self) -> np.ndarray:
-        return self._mcz_obs
-
-    @mcz_obs.setter
-    def mcz_obs(self, mcz_obs):
-        if isinstance(mcz_obs, np.ndarray):
-            self._mcz_obs = mcz_obs
-            return
-
-        # if self._mcz_obs is an attribute, then it is already set
-        if hasattr(self, "_mcz_obs"):
-            if self._mcz_obs is not None:
-                return
-
-        mock_obs = None
-        if mcz_obs is None:
-            mock_obs = MockObservation.from_compas_h5(
-                self.compas_h5_filename,
-            )
-        elif isinstance(mcz_obs, str):
-            mock_obs = MockObservation.from_npz(mcz_obs)
-        elif not isinstance(mcz_obs, np.ndarray):
-            raise ValueError("mcz_obs must be a npz filename, ndarray or None")
-
-        self._mcz_obs = mock_obs.mcz
-        true_params = mock_obs.mcz_grid.cosmological_parameters
-        true_lnl = (
-            mock_obs.mcz_grid.lnl(
-                mcz_obs=mock_obs.mcz,
-                duration=1,
-                compas_h5_path=self.compas_h5_filename,
-                sf_sample=true_params,
-                n_bootstraps=0,
-                save_plots=True,
-                outdir=self.outdir,
-            )[0]
-            * -1
+        return (
+            "Trainer("
+            f"model_type={self.model}, "
+            f"params={self.data_mngr.params}, "
+            f"truths={self.data_mngr.truths}, "
+            f"pts=[init{self.opt_mngr.init_data}, "
+            f"rnds={self.n_rounds}x{self.n_pts_per_round}pts)"
         )
-        self.truths = {"lnl": true_lnl, **true_params}
-
-    @property
-    def acquisition_fns(self) -> ACQ_FUN_TYPE:
-        return self._acquisition_fns
-
-    @acquisition_fns.setter
-    def acquisition_fns(self, acquisition_fns):
-        self._acquisition_fns = []
-
-        if isinstance(acquisition_fns[0], PredictiveVariance) or isinstance(
-            acquisition_fns[0], ExpectedImprovement
-        ):
-            self._acquisition_fns = acquisition_fns
-            return
-
-        if acquisition_fns is None:
-            acquisition_fns = ["PredictiveVariance", "ExpectedImprovement"]
-
-        for acq in acquisition_fns:
-            if acq == "PredictiveVariance" or acq == "pv":
-                self._acquisition_fns.append(PredictiveVariance())
-            elif acq == "ExpectedImprovement" or acq == "ei":
-                self._acquisition_fns.append(ExpectedImprovement())
-            else:
-                raise ValueError(f"Unknown acquisition function: {acq}")
-
-    @property
-    def truths(self) -> OrderedDict:
-        return self._truth
-
-    @truths.setter
-    def truths(self, truth):
-
-        self._truth = OrderedDict()
-        if isinstance(truth, str):
-            with open(truth, "r") as f:
-                truth = json.load(f)
-
-        if isinstance(truth, dict):
-
-            if "muz" in truth:
-                truth["mu_z"] = truth.pop("muz")
-            if "sigma0" in truth:
-                truth["sigma_0"] = truth.pop("sigma0")
-
-            self._truth = OrderedDict({p: truth[p] for p in self.params})
-            self._truth["lnl"] = truth["lnl"]
-
-    @property
-    def search_space(self):
-        return self.optimizer._search_space
 
     def train_loop(self):
-        for round_idx in trange(self.n_rounds, desc="Optimization round"):
-            try:
-                self._ith_optimization_round(round_idx)
-            except Exception as e:
-                # print full error message and traceback
-                logger.warning(
-                    f"Error in round {round_idx}: {e} {traceback.format_exc()}"
-                )
+
+        pbar = trange(self.n_rounds, desc="Optimization round")
+        for round_idx in pbar:
+            rule = self.opt_mngr.get_ith_rule(round_idx)
+            rule_name = str(rule._builder).split("(")[0]
+            pbar.set_postfix_str(f"rule: {rule_name}")
+            with Suppressor(self.verbose):
+                self._ith_optimization_round(round_idx, rule)
+            # try:
+            #     self._ith_optimization_round(round_idx)
+            # except Exception as e:
+            #     logger.warning(
+            #         f"Error in round {round_idx}: {e} {traceback.format_exc()}"
+            #     )
 
         logger.info(
             f"Optimization complete, saving result and data to {self.outdir}"
         )
-        self.save_surrogate()
+        self.__save_surrogate()
 
         if self.save_plots:
             save_gifs(self.outdir)
 
-    def _ith_optimization_round(self, i: int):
-        rule: AcquisitionRule = self.learning_rules[
-            i % len(self.learning_rules)
-        ]
-        self.result: OptimizationResult = self.optimizer.optimize(
-            self.n_pts_per_round,
-            self.data,
-            self.model,
-            rule,
-            track_state=False,
+        plot_kl_distances(
+            regex=os.path.join(self.outdir, "out_mcmc/*json"),
+            outdir=f"{self.outdir}/plots",
         )
-        self.data: Dataset = self.result.try_get_final_dataset()
-        self.model: TrainableProbabilisticModel = (
-            self.result.try_get_final_model()
-        )
-        self.__update_regret_data()
 
-        label = f"round{i}_{len(self.data)}pts"
+    def _ith_optimization_round(self, i: int, rule: Rule):
+        # optimisation stage
+        self.opt_mngr.optimize(
+            model=self.model,
+            data=self.data,
+            n_pts=self.n_pts_per_round,
+            rule=rule,
+        )
+        self.model, self.data = self.opt_mngr.get_optimised_model_and_data()
+        self.__post_round_actions(f"round{i}_{len(self.data)}pts")
+
+    def __post_round_actions(self, label):
+        self.__update_regret_data()
         if self.save_plots:
             save_diagnostic_plots(
                 self.data,
                 self.model,
-                self.search_space,
+                self.opt_mngr.search_space,
                 self.outdir,
                 label,
-                self.truths,
-                self.model_plotter,
-                self.reference_lnl,
+                truth=self.data_mngr.truths,
+                model_plotter=self.model_plotter,
+                reference_lnl=self.data_mngr.reference_lnl,
             )
-        self.save_surrogate(label=label)
+        self.__save_surrogate(label=label)
         sample_lnl_surrogate(
             f"{self.outdir}/{label}",
             outdir=os.path.join(self.outdir, f"out_mcmc"),
             label=label,
         )
 
-    def save_surrogate(self, label: Optional[str] = None):
+    def __save_surrogate(self, label: Optional[str] = None):
         lnl_surrogate = LnLSurrogate.from_bo_result(
-            bo_result=self.result,
-            params=self.params,
-            truths=self.truths,
+            bo_result=self.opt_mngr.result,
+            params=self.data_mngr.params,
+            truths=self.data_mngr.truths,
             outdir=self.outdir,
-            reference_lnl=self.reference_lnl,
+            reference_lnl=self.data_mngr.reference_lnl,
             label=label,
             regret=pd.DataFrame(self.regret_data),
         )
@@ -294,16 +188,8 @@ class Trainer:
         )
         self.regret_data.append(current_regret)
 
-    def __setup_logger(self):
-        os.makedirs(self.outdir, exist_ok=True)
-        summary_writer = tf.summary.create_file_writer(self.outdir)
-        set_tensorboard_writer(summary_writer)
-        logger.debug(
-            f"visualise optimization progress with `tensorboard --logdir={self.outdir}`"
-        )
-
 
 def train(*args, **kwargs) -> OptimizationResult:
     trainer = Trainer(*args, **kwargs)
     trainer.train_loop()
-    return trainer.result
+    return trainer.opt_mngr.result

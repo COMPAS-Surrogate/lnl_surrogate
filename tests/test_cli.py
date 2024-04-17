@@ -24,7 +24,7 @@ def test_cli(monkeypatch_lnl, mock_data, tmpdir):
         [
             "--compas_h5_filename",
             mock_data.compas_filename,
-            "--mcz_obs",
+            "--mcz_obs_filename",
             mock_data.observations_filename,
             "--param",
             "aSF",

@@ -7,6 +7,10 @@ output
 *idea
 *.gif
 venv
+outdir/
+docs/studies/*D/
+docs/studies/1D/outdir/gp*
+**/outdir
 detection_matrix
 *.csv
 .mypy_cache

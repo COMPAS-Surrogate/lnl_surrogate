@@ -1,3 +1,5 @@
+import logging
+
 import bilby
 import matplotlib.pyplot as plt
 from corner import overplot_lines
@@ -8,7 +10,15 @@ from lnl_computer.cosmic_integration.star_formation_paramters import (
 from .lnl_surrogate import LnLSurrogate
 
 
-def sample_lnl_surrogate(lnl_model_path: str, outdir: str, label: str = None):
+def sample_lnl_surrogate(
+    lnl_model_path: str, outdir: str, label: str = None, verbose=False
+):
+    bilby_logger = logging.getLogger("bilby")
+
+    bilby_logger.setLevel(logging.ERROR)
+    if verbose:
+        bilby_logger.setLevel(logging.INFO)
+
     lnl_surrogate = LnLSurrogate.load(lnl_model_path)
     prior = get_star_formation_prior(parameters=lnl_surrogate.param_keys)
     label = (
@@ -30,6 +40,8 @@ def sample_lnl_surrogate(lnl_model_path: str, outdir: str, label: str = None):
         outdir=outdir,
         label=label,
         clean=True,
+        verbose=verbose,
+        plot=False,
     )
     fig = result.plot_corner(save=False)
     overplot_lines(fig, list(truths.values()), color="red")

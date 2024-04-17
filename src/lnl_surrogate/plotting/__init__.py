@@ -40,7 +40,7 @@ def save_diagnostic_plots(
     # pd_fig.savefig(f"{plot_out}/func_{label}.png", bbox_inches="tight")
 
     if model_plotter:
-        model_plotter(model, data, search_space).savefig(
+        model_plotter(model, data, search_space, truth=truth).savefig(
             f"{plot_out}/round_{label}.png"
         )
     plt.close("all")

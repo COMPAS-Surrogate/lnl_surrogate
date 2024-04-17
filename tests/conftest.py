@@ -3,10 +3,9 @@ from typing import Dict
 
 import numpy as np
 import pytest
+from lnl_computer.cosmic_integration.mcz_grid import McZGrid
 from lnl_computer.mock_data import MockData, generate_mock_data
 from scipy.stats import multivariate_normal, norm
-
-from lnl_surrogate.surrogate.setup_optimizer import McZGrid
 
 np.random.seed(1)
 
@@ -27,7 +26,7 @@ def tmpdir() -> str:
 
 @pytest.fixture
 def mock_data() -> MockData:
-    return generate_mock_data(outdir=TEST_DIR)
+    return generate_mock_data(outdir=TEST_DIR, duration=1)
 
 
 class FakeData:

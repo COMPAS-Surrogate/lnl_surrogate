@@ -26,8 +26,7 @@ def get_model(
         raise ValueError(f"Model[{model_type}] not found")
 
     if optimize:
-        bo: trieste.models.optimizer.OptimizeResult = model.optimize(data)
-        model = bo.try_get_final_model()
+        model.optimize(data)
 
     return model
 
