@@ -41,18 +41,20 @@ def sample_lnl_surrogate(
         label=label,
         clean=True,
         verbose=verbose,
-        plot=False,
+        plot=True,
     )
-    plt.close("all")
-    fig = result.plot_corner(save=False, parameters=truths)
-    # add textbox on top left corner with n_training_points
-    fig.text(
-        0.1,
-        0.9,
-        f"#pts: {lnl_surrogate.n_training_points}",
-        ha="center",
-        va="center",
-        transform=fig.transFigure,
-    )
-    fig.savefig(f"{outdir}/../plots/{label}_corner.png")
-    plt.close(fig)
+    try:
+        fig = result.plot_corner(save=False, parameters=truths)
+        # add textbox on top left corner with n_training_points
+        fig.text(
+            0.1,
+            0.9,
+            f"#pts: {lnl_surrogate.n_training_points}",
+            ha="center",
+            va="center",
+            transform=fig.transFigure,
+        )
+        fig.savefig(f"{outdir}/../plots/{label}_corner.png")
+        plt.close(fig)
+    except Exception as e:
+        logging.warning(f"Failed to save corner plot: {e}")
