@@ -16,6 +16,8 @@ from .sample import sample_lnl_surrogate
 
 __all__ = ["train"]
 
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
 
 class Trainer:
     def __init__(

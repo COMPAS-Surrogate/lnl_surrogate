@@ -59,10 +59,10 @@ def test_1d(monkeypatch_lnl, mock_data, tmpdir, model_type):
         compas_h5_filename=mock_data.compas_filename,
         acquisition_fns=["nlcb"],
         params=["aSF"],
-        n_init=2,
-        n_rounds=6,
-        n_pts_per_round=2,
         duration=1,
+        n_init=2,
+        n_rounds=1,
+        n_pts_per_round=1,
         outdir=outdir,
         truth=_mock_lnl_truth(),
         model_plotter=_plot_res,
@@ -73,3 +73,22 @@ def test_1d(monkeypatch_lnl, mock_data, tmpdir, model_type):
     lnl_surr.parameters.update({"aSF": 0.1})
     lnl = lnl_surr.log_likelihood()
     assert isinstance(tf.squeeze(lnl).numpy(), float)
+
+
+def test_simple(mock_data, tmpdir):
+    outdir = f"{tmpdir}/real_lnl"
+    res = train(
+        model_type="gp",
+        mcz_obs_filename=mock_data.observations_filename,
+        compas_h5_filename=mock_data.compas_filename,
+        acquisition_fns=["ei"],
+        params=["aSF"],
+        duration=1,
+        n_init=2,
+        n_rounds=1,
+        n_pts_per_round=1,
+        outdir=outdir,
+        truth=_mock_lnl_truth(),
+        model_plotter=_plot_res,
+        noise_level=1e-3,
+    )

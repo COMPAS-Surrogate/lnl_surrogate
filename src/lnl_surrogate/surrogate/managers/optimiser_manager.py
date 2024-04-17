@@ -99,6 +99,7 @@ class OptimisationManager:
 
         p = self._data_mngr.params
         ref_lnl = self._data_mngr.truths.get("lnl", 0)
+        assert isinstance(ref_lnl, float)
 
         def _min_fn(_xi: np.ndarray):
             """
@@ -115,7 +116,9 @@ class OptimisationManager:
         def _f(x):
             if isinstance(x, tf.Tensor):
                 x = x.numpy()
-            neg_rel_lnls = np.array([self._neg_rel_lnl_fn(_xi) for _xi in x])
+            neg_rel_lnls = np.array(
+                [self._neg_rel_lnl_fn(_xi) for _xi in x]
+            )  # JUST THE LNL -- not the uncertainty
             _t = tf.convert_to_tensor(neg_rel_lnls, dtype=tf.float64)
             return tf.reshape(_t, (-1, 1))
 

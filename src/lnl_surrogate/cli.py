@@ -104,6 +104,7 @@ def cli_train(
         mcz_obs_filename=mcz_obs_filename,
         compas_h5_filename=compas_h5_filename,
         params=param,
+        duration=duration,
         outdir=outdir,
         acquisition_fns=acquisition_fns,
         n_init=n_init,
