@@ -43,8 +43,8 @@ def sample_lnl_surrogate(
         verbose=verbose,
         plot=False,
     )
-    fig = result.plot_corner(save=False)
-    overplot_lines(fig, list(truths.values()), color="red")
+    plt.close("all")
+    fig = result.plot_corner(save=False, parameters=truths)
     # add textbox on top left corner with n_training_points
     fig.text(
         0.1,
