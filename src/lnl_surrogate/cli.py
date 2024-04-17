@@ -75,6 +75,7 @@ from .surrogate.train import train
 @click.option(
     "--save_plots",
     type=bool,
+    is_flag=True,
     required=False,
     default=True,
     help="Whether to save plots",
