@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from bilby.core.likelihood import Likelihood
+from bilby.core.prior import Normal
 from trieste.models.utils import get_module_with_variables
 
 MODEL_FNAME = "trained_model"
@@ -22,6 +23,7 @@ class LnLSurrogate(Likelihood):
         regret: pd.DataFrame,
         truths: Dict[str, float] = {},
         reference_lnl: float = 0,
+        variable_lnl: bool = False,
     ):
         super().__init__()
         self.model = model
@@ -32,6 +34,7 @@ class LnLSurrogate(Likelihood):
         self.reference_lnl = reference_lnl
         self.param_keys = list(data.columns)[:-1]  # the last column is the lnl
         self.parameters = {k: np.nan for k in self.param_keys}
+        self.variable_lnl = variable_lnl
 
     def log_likelihood(self) -> float:
         """
@@ -40,8 +43,11 @@ class LnLSurrogate(Likelihood):
         """
         params = np.array([[self.parameters[k] for k in self.param_keys]])
         y_mean, y_std = self.model.predict(params)
-        neg_rel_lnl = y_mean.numpy().flatten()[0]
-        return self.reference_lnl - neg_rel_lnl
+        neg_rel_lnl, unc_lnl = y_mean.numpy().flatten()
+        lnl = self.reference_lnl - neg_rel_lnl
+        if self.variable_lnl:
+            return Normal(mu=lnl, sigma=unc_lnl).sample(1)
+        return lnl
 
     @property
     def n_training_points(self) -> int:
@@ -106,7 +112,7 @@ class LnLSurrogate(Likelihood):
             json.dump(meta_data, f)
 
     @classmethod
-    def load(cls, outdir: str, label: str = None):
+    def load(cls, outdir: str, label: str = None, variable_lnl: bool = False):
         if label is not None:
             outdir = f"{outdir}/{label}"
         model = tf.saved_model.load(f"{outdir}/{MODEL_FNAME}")
@@ -119,4 +125,4 @@ class LnLSurrogate(Likelihood):
                 meta_data = json.load(f)
         reference_lnl = meta_data.pop("reference_lnl", 0)
         truths = meta_data
-        return cls(model, data, regret, truths, reference_lnl)
+        return cls(model, data, regret, truths, reference_lnl, variable_lnl)
