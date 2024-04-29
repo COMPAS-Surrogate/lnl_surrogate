@@ -43,10 +43,11 @@ class LnLSurrogate(Likelihood):
         """
         params = np.array([[self.parameters[k] for k in self.param_keys]])
         y_mean, y_std = self.model.predict(params)
-        neg_rel_lnl, unc_lnl = y_mean.numpy().flatten()
+        neg_rel_lnl = y_mean.numpy().flatten()[0]
+        unc_lnl = y_std.numpy().flatten()[0]
         lnl = self.reference_lnl - neg_rel_lnl
         if self.variable_lnl:
-            return Normal(mu=lnl, sigma=unc_lnl).sample(1)
+            return Normal(mu=lnl, sigma=unc_lnl).sample(1)[0]
         return lnl
 
     @property

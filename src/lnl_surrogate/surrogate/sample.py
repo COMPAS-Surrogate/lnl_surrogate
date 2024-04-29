@@ -3,11 +3,11 @@ import os
 
 import bilby
 import matplotlib.pyplot as plt
-from corner import overplot_lines
 from lnl_computer.cosmic_integration.star_formation_paramters import (
     get_star_formation_prior,
 )
 
+from ..plotting import plot_overlaid_corner
 from .lnl_surrogate import LnLSurrogate
 
 
@@ -64,23 +64,14 @@ def sample_lnl_surrogate(
         **sampler_kwargs,
     )
 
-    try:
-        fig = result.plot_corner(save=False, parameters=truths)
-        # overplot other corner
-        fig = result
-
-        # add textbox on top left corner with n_training_points
-        fig.text(
-            0.1,
-            0.9,
-            f"#pts: {lnl_surrogate.n_training_points}",
-            ha="center",
-            va="center",
-            transform=fig.transFigure,
-        )
-        plot_dir = f"{outdir}/../plots"
-        os.makedirs(plot_dir, exist_ok=True)
-        fig.savefig(f"{plot_dir}/{label}_corner.png")
-        plt.close(fig)
-    except Exception as e:
-        logging.warning(f"Failed to save corner plot: {e}")
+    plot_dir = f"{outdir}/../plots"
+    os.makedirs(plot_dir, exist_ok=True)
+    plot_overlaid_corner(
+        [result.posterior, variable_lnl_result.posterior],
+        sample_labels=["LnL surrogate", "Variable LnL surrogate"],
+        axis_labels=lnl_surrogate.param_keys,
+        colors=["tab:blue", "tab:red"],
+        fname=f"{outdir}/{label}_corner.png",
+        truths=truths,
+        label=f"#pts: {lnl_surrogate.n_training_points}",
+    )

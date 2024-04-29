@@ -68,7 +68,7 @@ def mock_inout_data() -> FakeData:
 def _mock_lnl(*args, **kwargs):
     sf_sample: Dict = kwargs.get("sf_sample")
     sf_sample = np.array(list(sf_sample.values()))
-    return NORM.logpdf(sf_sample[0]), 0
+    return np.array([NORM.logpdf(sf_sample[0]), 0.001])
 
 
 def _mock_lnl_truth():

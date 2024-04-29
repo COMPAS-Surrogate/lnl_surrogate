@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 from ..logger import logger
 from .image_utils import make_gif
+from .overlaid_corner import plot_overlaid_corner
 from .plot_bo_corners import plot_evaluations, plot_model_partial_dependence
 from .plot_bo_metrics import plot_bo_metrics
 
