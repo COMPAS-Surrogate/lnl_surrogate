@@ -109,7 +109,10 @@ class LnLSurrogate(Likelihood):
         self.data.to_csv(f"{outdir}/{DATA_FNAME}", index=False)
         self.regret.to_csv(f"{outdir}/{REGRET_FNAME}", index=False)
         with open(f"{outdir}/{META_DATA}", "w") as f:
-            meta_data = {"reference_lnl": self.reference_lnl, **self.truths}
+            meta_data = {
+                "reference_lnl": self.reference_lnl,
+                **self.truths,
+            }
             json.dump(meta_data, f)
 
     @classmethod

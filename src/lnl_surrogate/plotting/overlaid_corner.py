@@ -1,6 +1,6 @@
 """Help plot overlaid corners"""
 import warnings
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import corner
 import matplotlib.lines as mlines
@@ -34,12 +34,15 @@ warnings.filterwarnings("ignore")
 # plt.rcParams['xtick.top'] = True
 # plt.rcParams['ytick.right'] = True
 
+
+BINS1D = 30
 CORNER_KWARGS = dict(
     smooth=0.99,
+    smooth1d=0.5,
     label_kwargs=dict(fontsize=30),
     title_kwargs=dict(fontsize=16),
     truth_color="tab:orange",
-    quantiles=(0.16, 0.84),
+    quantiles=None,
     levels=(1 - np.exp(-0.5), 1 - np.exp(-2), 1 - np.exp(-9 / 2.0)),
     plot_density=False,
     plot_datapoints=False,
@@ -47,6 +50,7 @@ CORNER_KWARGS = dict(
     max_n_ticks=3,
     verbose=False,
     use_math_text=True,
+    bins=BINS1D,
 )
 
 
@@ -56,7 +60,7 @@ def plot_overlaid_corner(
     axis_labels: List[str] = None,
     colors: List[str] = None,
     fname: str = "corner.png",
-    truths: Dict[str, float] = None,
+    truths: Union[Dict[str, float], List[float]] = None,
     label: str = None,
 ):
     """Plots multiple corners on top of each other"""
@@ -70,16 +74,25 @@ def plot_overlaid_corner(
         for samples in samples_list
     ]
 
+    # make the samples the same len --> min_len
+    samples_list = [
+        samples.sample(n=min_len, replace=False)
+        if len(samples) > min_len
+        else samples
+        for samples in samples_list
+    ]
+
     if colors is None:
         colors = [f"C{i}" for i in range(n)]
 
     if axis_labels is None:
         axis_labels = samples_list[0].columns
 
+    truths = list(truths.values()) if isinstance(truths, dict) else truths
     CORNER_KWARGS.update(
         labels=axis_labels,
         ranges=get_axes_ranges(samples_list, truths),
-        truths=[truths[col] for col in truths.keys()] if truths else None,
+        truths=truths,
     )
 
     fig = corner.corner(
@@ -87,15 +100,19 @@ def plot_overlaid_corner(
         color=colors[0],
         **CORNER_KWARGS,
     )
+    _, dims = samples_list[0].values.shape
 
     for idx in range(1, n):
-        fig = corner.corner(
-            samples_list[idx].values,
-            fig=fig,
-            weights=get_normalisation_weight(len(samples_list[idx]), min_len),
-            color=colors[idx],
-            **CORNER_KWARGS,
-        )
+        s = samples_list[idx].values
+        if dims == 1:
+            fig.gca().hist(s, bins=BINS1D, color=colors[idx], histtype="step")
+        else:
+            fig = corner.corner(
+                s,
+                fig=fig,
+                color=colors[idx],
+                **CORNER_KWARGS,
+            )
 
     plt.legend(
         handles=[
@@ -128,7 +145,7 @@ def _get_data_ranges(data: pd.DataFrame) -> List[List[float]]:
 
 def get_axes_ranges(
     samples_list: List[pd.DataFrame],
-    truths: Dict[str, float] = {},
+    truths: List[float] = {},
     truth_thres=0.1,
 ) -> List[List[float]]:
     """Get the ranges of the data"""
@@ -137,10 +154,10 @@ def get_axes_ranges(
         ranges.append(
             [
                 [
-                    truths[col] - truth_thres * truths[col],
-                    truths[col] + truth_thres * truths[col],
+                    t - truth_thres * t,
+                    t + truth_thres * t,
                 ]
-                for col in truths.keys()
+                for t in truths
             ]
         )
     ranges = np.array(ranges)
@@ -154,11 +171,3 @@ def get_axes_ranges(
     )
 
     return ax_ranges
-
-
-def get_normalisation_weight(
-    len_current_samples: int, len_of_longest_samples: int
-):
-    return np.ones(len_current_samples) * (
-        len_of_longest_samples / len_current_samples
-    )

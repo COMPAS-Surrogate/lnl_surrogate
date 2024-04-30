@@ -1,9 +1,11 @@
+import glob
 from typing import Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 import tensorflow as tf
+from bilby.core.result import Result
 from conftest import MAXX, MIDX, MINX, NORM, _mock_lnl_truth
 from trieste.acquisition.function import PredictiveVariance
 
@@ -73,6 +75,11 @@ def test_1d(monkeypatch_lnl, mock_data, tmpdir, model_type):
     lnl_surr.parameters.update({"aSF": 0.1})
     lnl = lnl_surr.log_likelihood()
     assert isinstance(tf.squeeze(lnl).numpy(), float)
+
+    # check that bilby result can be loaded
+    res_paths = glob.glob(f"{outdir}/out_mcmc/*result.json")
+    res = Result.from_json(res_paths[0])
+    assert res.meta_data["npts"] == 3
 
 
 def test_simple(mock_data, tmpdir):

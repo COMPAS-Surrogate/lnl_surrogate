@@ -50,7 +50,9 @@ def sample_lnl_surrogate(
         clean=True,
         verbose=verbose,
         plot=True,
+        smooth1d=0.5,
         **mcmc_kwargs,
+        meta_data=dict(npts=lnl_surrogate.n_training_points),
     )
 
     result = bilby.run_sampler(
@@ -64,6 +66,13 @@ def sample_lnl_surrogate(
         **sampler_kwargs,
     )
 
+    sampler_kwargs["iterations"] = 3000
+    result_highres = bilby.run_sampler(
+        likelihood=lnl_surrogate,
+        label=label.replace("surrogate", "highres_surrogate"),
+        **sampler_kwargs,
+    )
+
     plot_dir = f"{outdir}/../plots"
     os.makedirs(plot_dir, exist_ok=True)
     plot_overlaid_corner(
@@ -72,6 +81,15 @@ def sample_lnl_surrogate(
         axis_labels=lnl_surrogate.param_keys,
         colors=["tab:blue", "tab:red"],
         fname=f"{outdir}/{label}_corner.png",
+        truths=truths,
+        label=f"#pts: {lnl_surrogate.n_training_points}",
+    )
+    plot_overlaid_corner(
+        [result.posterior, result_highres.posterior],
+        sample_labels=["1K MCMC", "3k MCMC"],
+        axis_labels=lnl_surrogate.param_keys,
+        colors=["tab:blue", "tab:green"],
+        fname=f"{outdir}/{label}_mcmccompare_corner.png",
         truths=truths,
         label=f"#pts: {lnl_surrogate.n_training_points}",
     )
