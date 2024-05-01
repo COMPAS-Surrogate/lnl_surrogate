@@ -97,7 +97,7 @@ def plot_convergence(
 
     n_calls = np.arange(len(y_pts))
     x_mins, y_mins = _min_point_per_iteration(x_pts, y_pts)
-    y_gp, y_gpunc = model.predict(x_pts)
+    y_gp, y_gpunc = model.predict(x_mins)
     y_gp_upper = y_gp + y_gpunc
     y_gp_lower = y_gp - y_gpunc
 
