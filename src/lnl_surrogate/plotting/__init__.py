@@ -29,7 +29,7 @@ def save_diagnostic_plots(
     if "lnl" in truth:
         true_lnl = truth["lnl"] - reference_lnl
 
-    bo_fig = plot_bo_metrics(inpts, outpts, truth=true_lnl)
+    bo_fig = plot_bo_metrics(inpts, outpts, model, truth=true_lnl)
     bo_fig.savefig(f"{plot_out}/bo_metrics_{label}.png", bbox_inches="tight")
 
     evl_fig = plot_evaluations(inpts, outpts, model, search_space, truth=truth)

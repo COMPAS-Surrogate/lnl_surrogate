@@ -45,9 +45,9 @@ class Trainer:
         :param compas_h5_filename: the filename of the compas data
         :param params: the parameters to use [aSF, dSF, sigma0, muz] or dictionary of true values
         :param acquisition_fns: the acquisition functions to use
-        :param n_init: the number of initial points to use
+        :param n_init: the number of initial y_pts to use
         :param n_rounds: the number of rounds of optimization to perform
-        :param n_pts_per_round: the number of points to evaluate per round
+        :param n_pts_per_round: the number of y_pts to evaluate per round
         :param outdir: the output directory
         :param model_plotter: a function to plot the model
         :return: the optimization result
@@ -169,7 +169,7 @@ class Trainer:
         min_obs = tf.reduce_min(self.data.observations).numpy()
         min_idx = tf.argmin(self.data.observations).numpy()[0]
         min_input = self.data.query_points[min_idx].numpy()
-        # get the model predictions at the training points
+        # get the model predictions at the training y_pts
         model_values = self.model.predict(self.data.query_points)
         # upper and lower bounds of the model predictions
         model_mean = model_values[0].numpy()

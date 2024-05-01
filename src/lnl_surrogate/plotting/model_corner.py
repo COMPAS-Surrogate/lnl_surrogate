@@ -107,7 +107,7 @@ def __norm_lnl(lnl: np.ndarray) -> np.array:
 
 
 def __get_points_kwgs(color: str, alpha=0.3) -> Dict:
-    """Get kwargs for corner plot of points."""
+    """Get kwargs for corner plot of y_pts."""
     kwgs = KWGS.copy()
     kwgs.update(
         dict(

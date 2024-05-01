@@ -56,7 +56,7 @@ from .surrogate.train import train
     type=int,
     required=False,
     default=15,
-    help="The number of initial points to use",
+    help="The number of initial y_pts to use",
 )
 @click.option(
     "--n_rounds",
@@ -70,7 +70,7 @@ from .surrogate.train import train
     type=int,
     required=False,
     default=10,
-    help="The number of points to evaluate per round",
+    help="The number of y_pts to evaluate per round",
 )
 @click.option(
     "--save_plots",
@@ -126,7 +126,7 @@ def cli_train(
 def cli_plot_kl_distances(regex):
     npts, kl_distances = get_list_of_kl_distances(regex)
     plt.plot(npts, kl_distances)
-    plt.xlabel("Number of points")
+    plt.xlabel("Number of y_pts")
     plt.ylabel("KL Divergence")
     dirname = os.path.dirname(regex)
     plt.savefig(os.path.join(dirname, "kl_distances.png"))

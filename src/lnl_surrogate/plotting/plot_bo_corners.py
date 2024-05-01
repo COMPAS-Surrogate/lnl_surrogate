@@ -12,7 +12,7 @@ from trieste.space import SearchSpace
 
 def _make_scipy_result(x, y, space: SearchSpace, model: ProbabilisticModel):
     """
-    Create a SciPyOptimizeResult object from the given points and model.
+    Create a SciPyOptimizeResult object from the given y_pts and model.
     """
     bounds = Space(
         [

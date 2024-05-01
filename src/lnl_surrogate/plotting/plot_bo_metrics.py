@@ -5,22 +5,28 @@ import shutil
 
 import matplotlib.pyplot as plt
 import numpy as np
+from trieste.models import ProbabilisticModel
 
 
 def _distances_between_consecutive_points(points: np.ndarray) -> np.ndarray:
-    """Compute the distances between consecutive points."""
+    """Compute the distances between consecutive y_pts."""
     dist = np.linalg.norm(points[1:] - points[:-1], axis=1)
     return np.concatenate([[np.nan], dist])
 
 
-def _min_point_per_iteration(points: np.ndarray) -> np.ndarray:
+def _min_point_per_iteration(xpts: np.ndarray, ypts: np.ndarray) -> np.ndarray:
     """Compute the minimum point per iteration."""
-    return np.minimum.accumulate(points)
+
+    min_ys = np.minimum.accumulate(ypts)
+    min_xs = xpts[np.argmin(ypts, axis=0)]
+
+    return min_xs, min_ys
 
 
 def plot_bo_metrics(
     query_points: np.ndarray,
     objective_values: np.ndarray,
+    model: ProbabilisticModel,
     color: str = "tab:blue",
     label: str = None,
     init_n_points: int = None,
@@ -33,7 +39,13 @@ def plot_bo_metrics(
     fig = axes[0].get_figure()
 
     plot_convergence(
-        objective_values, color, label, init_n_points, axes[0], truth
+        x_pts=query_points,
+        y_pts=objective_values,
+        model=model,
+        color=color,
+        init_n_points=init_n_points,
+        ax=axes[0],
+        true_minimum=truth,
     )
     plot_distance(query_points, color, label, init_n_points, axes[1])
     fig.tight_layout()
@@ -48,7 +60,7 @@ def plot_distance(
     init_n_points: int = None,
     ax: plt.Axes = None,
 ) -> None:
-    """Plot the distance between consecutive points."""
+    """Plot the distance between consecutive y_pts."""
     if ax is None:
         fig, ax = plt.subplots()
 
@@ -56,11 +68,11 @@ def plot_distance(
     n_calls = np.arange(len(points))
     if init_n_points:
         ax.axvline(
-            init_n_points, color="gray", linestyle="--", label="Initial points"
+            init_n_points, color="gray", linestyle="--", label="Initial y_pts"
         )
 
     if len(points) > 30:
-        # plot the last 30 points
+        # plot the last 30 y_pts
         n_calls = n_calls[-30:]
         distances = distances[-30:]
 
@@ -70,31 +82,40 @@ def plot_distance(
 
 
 def plot_convergence(
-    points: np.ndarray,
+    x_pts: np.ndarray,
+    y_pts: np.ndarray,
+    model: ProbabilisticModel,
     color: str = "tab:blue",
-    label: str = None,
     init_n_points: int = None,
     ax: plt.Axes = None,
     true_minimum: float = None,
+    n_points_to_plot: int = 30,
 ) -> None:
     """Plot the convergence of the surrogate model."""
     if ax is None:
         fig, ax = plt.subplots()
 
-    min_points = _min_point_per_iteration(points)
-    n_calls = np.arange(len(points))
+    n_calls = np.arange(len(y_pts))
+    x_mins, y_mins = _min_point_per_iteration(x_pts, y_pts)
+    y_gp, y_gpunc = model.predict(x_pts)
+    y_gp_upper = y_gp + y_gpunc
+    y_gp_lower = y_gp - y_gpunc
 
-    if len(points) > 30:
-        # plot the last 30 points
-        n_calls = n_calls[-30:]
-        min_points = min_points[-30:]
+    if n_points_to_plot > 0 and len(y_pts) > n_points_to_plot:
+        # plot the last n_points_to_plot
+        n_calls = n_calls[-n_points_to_plot:]
+        y_mins = y_mins[-n_points_to_plot:]
+        x_mins = x_mins[-n_points_to_plot:]
+        y_pts = y_pts[-n_points_to_plot:]
+        y_gp_upper = y_gp_upper[-n_points_to_plot:]
+        y_gp_lower = y_gp_lower[-n_points_to_plot:]
 
     if init_n_points:
         ax.axvline(
             init_n_points,
             color="gray",
             linestyle="--",
-            label="Initial points",
+            label="Initial y_pts",
             zorder=-10,
         )
     if true_minimum:
@@ -106,6 +127,16 @@ def plot_convergence(
             zorder=-10,
         )
 
-    ax.plot(n_calls, min_points, color=color, label=label)
+    ax.scatter(n_calls, y_pts, color=color, label="$f(x)$")
+    ax.plot(n_calls, y_mins, color=color, label="$f(x)_{\\rm min}$")
+    ax.fill_between(
+        n_calls,
+        y_gp_upper.numpy().flatten(),
+        y_gp_lower.numpy().flatten(),
+        color="tab:orange",
+        alpha=0.3,
+        label="GP 1$\sigma$",
+    )
     ax.set_xlabel("Num $f(x)$ calls ($n$)")
-    ax.set_ylabel("min $f(x)$ after $n$ calls")
+    ax.set_ylabel("$f(x)$")
+    ax.legend(loc="upper right")

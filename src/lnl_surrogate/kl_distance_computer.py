@@ -113,6 +113,6 @@ def plot_kl_distances(regex, outdir=None):
     outdir = outdir or os.path.dirname(regex)
     npts, kl_distances = get_list_of_kl_distances(regex)
     plt.plot(npts, kl_distances)
-    plt.xlabel("Number of points")
+    plt.xlabel("Number of y_pts")
     plt.ylabel("KL Divergence")
     plt.savefig(os.path.join(outdir, "kl_distances.png"))
