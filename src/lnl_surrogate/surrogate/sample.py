@@ -62,14 +62,14 @@ def sample_lnl_surrogate(
     )
     variable_lnl_result = bilby.run_sampler(
         likelihood=variable_lnl_surrogate,
-        label=label.replace("surrogate", "variableLnL_surrogate"),
+        label=label + "_variable_lnl",
         **sampler_kwargs,
     )
 
     sampler_kwargs["iterations"] = 3000
     result_highres = bilby.run_sampler(
         likelihood=lnl_surrogate,
-        label=label.replace("surrogate", "highres_surrogate"),
+        label=label + "_highres",
         **sampler_kwargs,
     )
 
@@ -80,7 +80,7 @@ def sample_lnl_surrogate(
         sample_labels=["LnL surrogate", "Variable LnL surrogate"],
         axis_labels=lnl_surrogate.param_keys,
         colors=["tab:blue", "tab:red"],
-        fname=f"{outdir}/{label}_corner.png",
+        fname=f"{outdir}/{label}_variablecompare_corner.png",
         truths=truths,
         label=f"#pts: {lnl_surrogate.n_training_points}",
     )

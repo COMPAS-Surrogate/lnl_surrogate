@@ -114,14 +114,14 @@ def plot_overlaid_corner(
                 **CORNER_KWARGS,
             )
 
-    plt.legend(
+    fig.legend(
         handles=[
             mlines.Line2D([], [], color=colors[i], label=sample_labels[i])
             for i in range(n)
         ],
-        fontsize=20,
+        fontsize=10,
         frameon=False,
-        bbox_to_anchor=(1, ndim),
+        # bbox_to_anchor=(1, ndim),
         loc="upper right",
     )
     # add textbox on top left corner with n_training_points

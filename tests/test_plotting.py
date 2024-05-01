@@ -40,10 +40,11 @@ def test_overlaid_corner(tmpdir):
     ]
     plot_overlaid_corner(
         rs,
-        ["r1", "r2"],
+        sample_labels=["r1", "r2"],
         colors=["r", "b"],
         fname=f"{tmpdir}/corner2.png",
         truths=[0.1, 0.1],
+        label="NumPts 10",
     )
 
 
