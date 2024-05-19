@@ -7,7 +7,11 @@ from .kl_distance_computer import get_list_of_kl_distances
 from .surrogate.train import train
 
 
-@click.command("train_lnl_surrogate")
+@click.command(
+    "train_lnl_surrogate",
+    help="Train a COMPAS LnL(d|aSF, dSF, muz, sigma0) surrogate model using Gaussian Processes or Deep Gaussian Processes. "
+    "During training, the model will acquire the next best points to be used for training. ",
+)
 @click.option(
     "--compas_h5_filename",
     type=str,
@@ -130,3 +134,8 @@ def cli_plot_kl_distances(regex):
     plt.ylabel("KL Divergence")
     dirname = os.path.dirname(regex)
     plt.savefig(os.path.join(dirname, "kl_distances.png"))
+
+
+@click.command("build_surrogate", help="ls" "")
+def cli_build_surrogate():
+    pass
