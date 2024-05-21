@@ -141,7 +141,7 @@ def cli_plot_kl_distances(regex):
     "build_surrogate",
     help="Build a surrogate model given the CSV of training data",
 )
-@click.argument("--csv", "-c", required=True, type=str)
+@click.option("--csv", "-c", required=True, type=str)
 @click.option(
     "--model_type",
     "-m",

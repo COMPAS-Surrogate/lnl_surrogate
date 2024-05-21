@@ -153,16 +153,16 @@ class LnLSurrogate(Likelihood):
         )
         surrogate = cls(model, data, pd.DataFrame(), truths, reference_lnl)
         outdir = f"outdir_{label}"
-        surrogate.save(outdir)
+        # surrogate.save(outdir)
         if plot:
             surrogate.plot(outdir=outdir, label=label)
         return surrogate
 
     def plot(self, **kwargs):
         save_diagnostic_plots(
-            self.data,
-            self.model,
-            get_search_space(self.param_keys),
+            data=_df_to_dataset(self.data),
+            model=self.model,
+            search_space=get_search_space(self.param_keys),
             outdir=kwargs.get("outdir", "outdir"),
             label=kwargs.get("label", "lnl_surrogate"),
             truth=self.truths,
@@ -189,10 +189,15 @@ def _df_to_dataset(df: pd.DataFrame) -> Dataset:
         # add a new column to the observations
         observations = np.array([observations, lnl_unc]).T
 
-    query_points = df.drop(columns=["lnl", "lnl_unc"]).values
+    query_points = tf.convert_to_tensor(df.values, dtype=tf.float64)
+    observations = tf.convert_to_tensor(observations, dtype=tf.float64)
+    # ensure correct rank (at least 2)
+    query_points = tf.reshape(query_points, (-1, len(df.columns)))
+    observations = tf.reshape(observations, (-1, 1))
+
     return Dataset(
-        query_points=tf.convert_to_tensor(query_points, dtype=tf.float64),
-        observations=tf.convert_to_tensor(observations, dtype=tf.float64),
+        query_points=query_points,
+        observations=observations,
     )
 
 
