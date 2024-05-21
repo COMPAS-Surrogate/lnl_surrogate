@@ -106,7 +106,7 @@ class LnLSurrogate(Likelihood):
             reference_lnl=reference_lnl,
         )
 
-    def save(self, outdir: str, label: str = None):
+    def save(self, outdir: str, label: str = None, plots=False):
         if label is not None:
             outdir = f"{outdir}/{label}"
             os.makedirs(outdir, exist_ok=True)
@@ -119,6 +119,9 @@ class LnLSurrogate(Likelihood):
                 **self.truths,
             }
             json.dump(meta_data, f)
+
+        if plots:
+            self.plot(outdir=outdir, label=label)
 
     @classmethod
     def load(cls, outdir: str, label: str = None, variable_lnl: bool = False):

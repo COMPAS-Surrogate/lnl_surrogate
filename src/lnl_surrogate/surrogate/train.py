@@ -153,7 +153,7 @@ class Trainer:
             label=label,
         )
 
-    def __save_surrogate(self, label: Optional[str] = None):
+    def __save_surrogate(self, label: Optional[str] = None, plots=False):
         lnl_surrogate = LnLSurrogate.from_bo_result(
             bo_result=self.opt_mngr.result,
             params=self.data_mngr.params,
@@ -163,7 +163,7 @@ class Trainer:
             label=label,
             regret=pd.DataFrame(self.regret_data),
         )
-        lnl_surrogate.save(self.outdir, label)
+        lnl_surrogate.save(self.outdir, label, plots=plots)
 
     def __update_regret_data(self):
         min_obs = tf.reduce_min(self.data.observations).numpy()
