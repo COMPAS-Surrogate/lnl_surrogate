@@ -8,7 +8,7 @@ from trieste.space import SearchSpace
 
 __all__ = ["get_model"]
 
-MIN_LIKELIHOOD_VARIANCE = 1e-6
+MIN_LIKELIHOOD_VARIANCE = 1
 
 
 def get_model(

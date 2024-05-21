@@ -19,6 +19,7 @@ def save_diagnostic_plots(
     truth={},
     model_plotter=None,
     reference_lnl=0,
+    **kwargs,
 ):
     logger.info("Saving diagnostic plots")
     plot_out = f"{outdir}/plots"

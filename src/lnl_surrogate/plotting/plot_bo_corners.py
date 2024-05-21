@@ -40,7 +40,7 @@ def plot_model_partial_dependence(
     model,
     search_space: SearchSpace,
     truth: Dict = None,
-    **plotting_kwargs
+    **kwargs
 ) -> plt.Figure:
     """
     Plot the evaluation matrix --> a corner plot of the parameters,
@@ -50,23 +50,27 @@ def plot_model_partial_dependence(
     truths = truths if truths is not None else "result"
     res = _make_scipy_result(in_pts, out_pts, search_space, model)
 
-    # increase these for higher resolution
-    plotting_kwargs["n_points"] = plotting_kwargs.get("n_points", 50)
-    plotting_kwargs["n_samples"] = plotting_kwargs.get("n_samples", 500)
-    plotting_kwargs["levels"] = plotting_kwargs.get("levels", 5)
-
     ax = skopt_plot_objective(
         res,
-        sample_source="random",
         dimensions=labels,
         minimum=truths,
-        **plotting_kwargs
+        n_points=kwargs.get("n_points", 50),
+        n_samples=kwargs.get("n_samples", 500),
+        levels=kwargs.get("levels", 10),
+        sample_source=kwargs.get("sample_source", "minimum"),
+        zscale=kwargs.get("zscale", "linear"),
+        **kwargs
     )
     return _get_fig(ax)
 
 
 def plot_evaluations(
-    in_pts, out_pts, model, search_space: SearchSpace, truth: Dict = None
+    in_pts,
+    out_pts,
+    model,
+    search_space: SearchSpace,
+    truth: Dict = None,
+    **kwargs
 ) -> plt.Figure:
     """
     Plot the evaluation matrix --> a corner plot of the parameters,
@@ -78,7 +82,12 @@ def plot_evaluations(
     #     in_pts = np.vstack([in_pts, tru_vals])
     #     out_pts = np.append(out_pts, truth['lnl'])
     res = _make_scipy_result(in_pts, out_pts, search_space, model)
-    ax = skopt_plot_evaluations(res, dimensions=labels)
+    ax = skopt_plot_evaluations(
+        res,
+        dimensions=labels,
+        bins=kwargs.get("bins", 20),
+        plot_dims=kwargs.get("plot_dims", True),
+    )
     fig = _get_fig(ax)
     if truth:
         n_dims = in_pts.shape[1]

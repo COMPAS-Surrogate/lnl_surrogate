@@ -4,6 +4,7 @@ import click
 import matplotlib.pyplot as plt
 
 from .kl_distance_computer import get_list_of_kl_distances
+from .surrogate.lnl_surrogate import LnLSurrogate
 from .surrogate.train import train
 
 
@@ -136,6 +137,32 @@ def cli_plot_kl_distances(regex):
     plt.savefig(os.path.join(dirname, "kl_distances.png"))
 
 
-@click.command("build_surrogate", help="ls" "")
-def cli_build_surrogate():
-    pass
+@click.command(
+    "build_surrogate",
+    help="Build a surrogate model given the CSV of training data",
+)
+@click.argument("--csv", "-c", required=True, type=str)
+@click.option(
+    "--model_type",
+    "-m",
+    type=str,
+    required=False,
+    help="The model type to use [gp, deepgp]",
+    default="gp",
+)
+@click.option(
+    "--label",
+    "-l",
+    type=str,
+    required=False,
+    help="The output directory for the surrogate model",
+    default="lnl_surrogate",
+)
+@click.option("--plots", "-p", is_flag=True, help="Whether to save plots")
+def cli_build_surrogate(
+    csv: str,
+    model_type: str,
+    label: str,
+    plots: bool,
+):
+    LnLSurrogate.from_csv(csv, model_type, label, plot=plots)

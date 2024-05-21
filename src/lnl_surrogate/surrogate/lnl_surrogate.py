@@ -7,7 +7,12 @@ import pandas as pd
 import tensorflow as tf
 from bilby.core.likelihood import Likelihood
 from bilby.core.prior import Normal
+from trieste.data import Dataset
 from trieste.models.utils import get_module_with_variables
+
+from ..plotting import save_diagnostic_plots
+from .model import get_model
+from .utils import get_search_space
 
 MODEL_FNAME = "trained_model"
 DATA_FNAME = "data.csv"
@@ -123,10 +128,77 @@ class LnLSurrogate(Likelihood):
         data = pd.read_csv(f"{outdir}/{DATA_FNAME}")
         regret = pd.read_csv(f"{outdir}/{REGRET_FNAME}")
         meta_fname = f"{outdir}/{META_DATA}"
-        meta_data = {}
-        if os.path.exists(meta_fname):
-            with open(meta_fname, "r") as f:
-                meta_data = json.load(f)
-        reference_lnl = meta_data.pop("reference_lnl", 0)
-        truths = meta_data
+        reference_lnl, truths = _load_metadata(meta_fname)
         return cls(model, data, regret, truths, reference_lnl, variable_lnl)
+
+    @classmethod
+    def from_csv(
+        cls,
+        csv: str,
+        model_type: str,
+        label: str,
+        plot: bool = False,
+    ):
+        data = pd.read_csv(csv)
+        params = _get_params_from_df(data)
+        dataset = _df_to_dataset(data)
+        meta_fn = csv.replace(csv.split("/")[-1], "meta_data.json")
+        reference_lnl, truths = _load_metadata(meta_fn)
+
+        model = get_model(
+            model_type,
+            dataset,
+            get_search_space(params),
+            optimize=True,
+        )
+        surrogate = cls(model, data, pd.DataFrame(), truths, reference_lnl)
+        outdir = f"outdir_{label}"
+        surrogate.save(outdir)
+        if plot:
+            surrogate.plot(outdir=outdir, label=label)
+        return surrogate
+
+    def plot(self, **kwargs):
+        save_diagnostic_plots(
+            self.data,
+            self.model,
+            get_search_space(self.param_keys),
+            outdir=kwargs.get("outdir", "outdir"),
+            label=kwargs.get("label", "lnl_surrogate"),
+            truth=self.truths,
+            reference_lnl=self.reference_lnl,
+        )
+
+
+def _load_metadata(fn: str):
+    meta_data = {}
+    if os.path.exists(fn):
+        with open(fn, "r") as f:
+            meta_data = json.load(f)
+    reference_lnl = meta_data.pop("reference_lnl", 0)
+    truths = meta_data
+    return reference_lnl, truths
+
+
+def _df_to_dataset(df: pd.DataFrame) -> Dataset:
+    observations = df["lnl"].values
+    df = df.drop(columns="lnl")
+    if "lnl_unc" in df.columns:
+        lnl_unc = df["lnl_unc"]
+        df = df.drop(columns="lnl_unc")
+        # add a new column to the observations
+        observations = np.array([observations, lnl_unc]).T
+
+    query_points = df.drop(columns=["lnl", "lnl_unc"]).values
+    return Dataset(
+        query_points=tf.convert_to_tensor(query_points, dtype=tf.float64),
+        observations=tf.convert_to_tensor(observations, dtype=tf.float64),
+    )
+
+
+def _get_params_from_df(df: pd.DataFrame) -> list:
+    params = list(df.columns)
+    for p in ["lnl", "lnl_unc"]:
+        if p in params:
+            params.remove(p)
+    return params

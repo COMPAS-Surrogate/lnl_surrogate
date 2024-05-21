@@ -6,9 +6,6 @@ import numpy as np
 import tensorflow as tf
 import trieste
 from lnl_computer.cosmic_integration.mcz_grid import McZGrid
-from lnl_computer.cosmic_integration.star_formation_paramters import (
-    get_star_formation_prior,
-)
 from trieste.acquisition import (
     AugmentedExpectedImprovement,
     DiscreteThompsonSampling,
@@ -29,6 +26,7 @@ from trieste.space import SearchSpace
 from trieste.utils import DEFAULTS
 
 from ..model import get_model
+from ..utils import get_search_space
 from .data_manager import DataManager
 
 __all__ = ["OptimisationManager"]
@@ -48,7 +46,7 @@ class OptimisationManager:
         self.n_init = n_init
 
         # setup optimisation variables
-        self.search_space = self._get_search_space()
+        self.search_space = get_search_space(self._p)
         self._acquisiton_fn = dict(
             ei=ExpectedImprovement(search_space=self.search_space),
             nlcb=NegativeLowerConfidenceBound(beta=1.96),
@@ -75,13 +73,6 @@ class OptimisationManager:
 
         # optimisation result
         self.result: Result = None
-
-    def _get_search_space(self) -> SearchSpace:
-        prior = get_star_formation_prior()
-        prms = self._data_mngr.params
-        param_mins = [prior[p].minimum for p in prms]
-        param_maxs = [prior[p].maximum for p in prms]
-        return trieste.space.Box(param_mins, param_maxs)
 
     def __create_neg_rel_lnl_fn(self) -> Callable:
         """Create the negative relative log likelihood function."""

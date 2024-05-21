@@ -10,6 +10,10 @@ from lnl_computer.cosmic_integration.star_formation_paramters import (
 from ..plotting import plot_overlaid_corner
 from .lnl_surrogate import LnLSurrogate
 
+ORIG_COL = "tab:blue"
+VAR_COL = "tab:red"
+HIGHRES_COL = "tab:green"
+
 
 def sample_lnl_surrogate(
     lnl_model_path: str,
@@ -50,7 +54,6 @@ def sample_lnl_surrogate(
         clean=True,
         verbose=verbose,
         plot=True,
-        smooth1d=0.5,
         **mcmc_kwargs,
         meta_data=dict(npts=lnl_surrogate.n_training_points),
     )
@@ -59,11 +62,13 @@ def sample_lnl_surrogate(
         likelihood=lnl_surrogate,
         label=label,
         **sampler_kwargs,
+        color=ORIG_COL,
     )
     variable_lnl_result = bilby.run_sampler(
         likelihood=variable_lnl_surrogate,
         label=label + "_variable_lnl",
         **sampler_kwargs,
+        color=VAR_COL,
     )
 
     sampler_kwargs["iterations"] = 3000
@@ -71,6 +76,7 @@ def sample_lnl_surrogate(
         likelihood=lnl_surrogate,
         label=label + "_highres",
         **sampler_kwargs,
+        color=HIGHRES_COL,
     )
 
     plot_dir = f"{outdir}/../plots"
@@ -79,7 +85,7 @@ def sample_lnl_surrogate(
         [result.posterior, variable_lnl_result.posterior],
         sample_labels=["LnL surrogate", "Variable LnL surrogate"],
         axis_labels=lnl_surrogate.param_keys,
-        colors=["tab:blue", "tab:red"],
+        colors=[ORIG_COL, VAR_COL],
         fname=f"{outdir}/{label}_variablecompare_corner.png",
         truths=truths,
         label=f"#pts: {lnl_surrogate.n_training_points}",
@@ -88,7 +94,7 @@ def sample_lnl_surrogate(
         [result.posterior, result_highres.posterior],
         sample_labels=["1K MCMC", "3k MCMC"],
         axis_labels=lnl_surrogate.param_keys,
-        colors=["tab:blue", "tab:green"],
+        colors=[ORIG_COL, HIGHRES_COL],
         fname=f"{outdir}/{label}_mcmccompare_corner.png",
         truths=truths,
         label=f"#pts: {lnl_surrogate.n_training_points}",
