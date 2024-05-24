@@ -86,7 +86,7 @@ def plot_evaluations(
         res,
         dimensions=labels,
         bins=kwargs.get("bins", 20),
-        plot_dims=kwargs.get("plot_dims", True),
+        plot_dims=kwargs.get("plot_dims", None),
     )
     fig = _get_fig(ax)
     if truth:
@@ -132,7 +132,7 @@ def plot_evaluations(
 
 def _get_param_labels(truths):
     labels, truth_vals = None, None
-    if isinstance(truths, dict):
+    if isinstance(truths, dict) and len(truths) > 0:
         # get dict without lnl key
         truths = {k: v for k, v in truths.items() if k != "lnl"}
         labels = list(truths.keys())

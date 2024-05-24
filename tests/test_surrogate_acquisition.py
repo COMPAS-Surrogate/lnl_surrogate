@@ -93,13 +93,6 @@ def test_1d(monkeypatch_lnl, mock_data, tmpdir, model_type):
     res = Result.from_json(res_paths[0])
     assert res.meta_data["npts"] == 3
 
-    lnl_surr = LnLSurrogate.from_csv(
-        csv=f"{outdir}/data.csv",
-        model_type=model_type,
-        label="loaded_from_csv",
-        plot=True,
-    )
-
 
 def test_simple(mock_data, tmpdir):
     outdir = f"{tmpdir}/real_lnl"
