@@ -2,8 +2,12 @@ import os
 from typing import Dict
 
 import numpy as np
+import pandas as pd
 import pytest
 from lnl_computer.cosmic_integration.mcz_grid import McZGrid
+from lnl_computer.cosmic_integration.star_formation_paramters import (
+    get_star_formation_prior,
+)
 from lnl_computer.mock_data import MockData, generate_mock_data
 from scipy.stats import multivariate_normal, norm
 
@@ -13,7 +17,7 @@ MINX, MAXX = 0.005, 0.015
 MIDX = (MINX + MAXX) / 2
 NORM = norm(MIDX, 0.003)
 
-
+HERE = os.path.abspath(os.path.dirname(__file__))
 TEST_DIR = "out_test"
 
 
@@ -78,3 +82,19 @@ def _mock_lnl_truth():
 @pytest.fixture
 def monkeypatch_lnl(monkeypatch):
     monkeypatch.setattr(McZGrid, "lnl", _mock_lnl)
+
+
+@pytest.fixture
+def training_csv():
+    fpath = os.path.join(HERE, "data.csv")
+    if not os.path.exists(fpath):
+        # generate CSV with aSF,dSF,mu_z,sigma_0,lnl as columns
+        np.random.seed(1)
+        samps = pd.DataFrame(get_star_formation_prior().sample(500))
+        lnl = np.ones(len(samps))
+        for p in samps.columns:
+            ln_pdf = norm(np.mean(samps[p]), np.std(samps[p])).logpdf(samps[p])
+            lnl += ln_pdf
+        samps["lnl"] = lnl
+        samps.to_csv(fpath, index=False)
+    return fpath

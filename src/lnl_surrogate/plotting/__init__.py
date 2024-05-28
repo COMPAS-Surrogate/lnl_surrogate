@@ -25,7 +25,7 @@ def save_diagnostic_plots(
     reference_lnl=0,
     **kwargs,
 ):
-    logger.info("Saving diagnostic plots")
+    logger.info("Saving diagnostic plots...")
     plot_out = f"{outdir}/plots"
     os.makedirs(plot_out, exist_ok=True)
     inpts, outpts = data.query_points.numpy(), data.observations.numpy()
@@ -34,8 +34,10 @@ def save_diagnostic_plots(
     if "lnl" in truth:
         true_lnl = truth["lnl"] - reference_lnl
 
+    fname = f"{plot_out}/bo_metrics_{label}.png"
     bo_fig = plot_bo_metrics(inpts, outpts, model, truth=true_lnl)
-    bo_fig.savefig(f"{plot_out}/bo_metrics_{label}.png", bbox_inches="tight")
+    bo_fig.savefig(fname, bbox_inches="tight")
+    logger.info(f"Saved {fname}")
 
     kwgs = dict(
         in_pts=inpts,
@@ -45,6 +47,7 @@ def save_diagnostic_plots(
         truth=truth,
     )
     evl_fig = plot_trieste_evaluations(**kwgs)
+
     evl_fig.savefig(f"{plot_out}/eval_{label}.png", bbox_inches="tight")
 
     pd_fig = plot_trieste_objective(**kwgs)
