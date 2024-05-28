@@ -72,21 +72,12 @@ class LnLSurrogate(Likelihood):
     ):
         model = bo_result.try_get_final_model()
         data = bo_result.try_get_final_dataset()
-        module = get_module_with_variables(model)
-        n_params = data.query_points.shape[1]
-        module.predict = tf.function(
-            model.predict,
-            input_signature=[
-                tf.TensorSpec(shape=[None, n_params], dtype=tf.float64)
-            ],
-        )
+        tf_saved_model = f"{outdir}/{MODEL_FNAME}"
+        model = _tf_model_from_gpflow(model, data, tf_saved_model)
 
         if label is not None:
             outdir = f"{outdir}/{label}"
             os.makedirs(outdir, exist_ok=True)
-
-        tf.saved_model.save(module, f"{outdir}/{MODEL_FNAME}")
-        model = tf.saved_model.load(f"{outdir}/{MODEL_FNAME}")
 
         inputs = data.query_points.numpy()
         outputs = data.observations.numpy()
@@ -110,6 +101,7 @@ class LnLSurrogate(Likelihood):
         if label is not None:
             outdir = f"{outdir}/{label}"
             os.makedirs(outdir, exist_ok=True)
+
         tf.saved_model.save(self.model, f"{outdir}/{MODEL_FNAME}")
         self.data.to_csv(f"{outdir}/{DATA_FNAME}", index=False)
         self.regret.to_csv(f"{outdir}/{REGRET_FNAME}", index=False)
@@ -154,11 +146,12 @@ class LnLSurrogate(Likelihood):
             get_search_space(params),
             optimize=True,
         )
-        surrogate = cls(model, data, pd.DataFrame(), truths, reference_lnl)
         outdir = f"outdir_{label}"
-        # surrogate.save(outdir)
-        if plot:
-            surrogate.plot(outdir=outdir, label=label)
+        model = _tf_model_from_gpflow(
+            model, dataset, f"{outdir}/{MODEL_FNAME}"
+        )
+        surrogate = cls(model, data, pd.DataFrame(), truths, reference_lnl)
+        surrogate.save(outdir, label=label, plots=plot)
         return surrogate
 
     def plot(self, **kwargs):
@@ -210,3 +203,16 @@ def _get_params_from_df(df: pd.DataFrame) -> list:
         if p in params:
             params.remove(p)
     return params
+
+
+def _tf_model_from_gpflow(model, dataset, save_fn: str):
+    module = get_module_with_variables(model)
+    n_params = dataset.query_points.shape[1]
+    module.predict = tf.function(
+        model.predict,
+        input_signature=[
+            tf.TensorSpec(shape=[None, n_params], dtype=tf.float64)
+        ],
+    )
+    tf.saved_model.save(module, save_fn)
+    return tf.saved_model.load(save_fn)

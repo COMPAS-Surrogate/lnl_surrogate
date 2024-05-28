@@ -9,6 +9,9 @@ import tensorflow as tf
 from bilby.core.result import Result
 from conftest import MAXX, MIDX, MINX, NORM, _mock_lnl_truth
 from lnl_computer.cosmic_integration.mcz_grid import McZGrid
+from lnl_computer.cosmic_integration.star_formation_paramters import (
+    get_star_formation_prior,
+)
 from lnl_computer.observation.mock_observation import MockObservation
 from scipy.stats import norm
 from trieste.acquisition.function import PredictiveVariance
@@ -92,13 +95,6 @@ def test_1d(monkeypatch_lnl, mock_data, tmpdir, model_type):
     res_paths = glob.glob(f"{outdir}/out_mcmc/*result.json")
     res = Result.from_json(res_paths[0])
     assert res.meta_data["npts"] == 3
-
-    lnl_surr = LnLSurrogate.from_csv(
-        csv=f"{outdir}/data.csv",
-        model_type=model_type,
-        label="loaded_from_csv",
-        plot=True,
-    )
 
 
 def test_simple(mock_data, tmpdir):

@@ -3,6 +3,7 @@
 *.log
 build
 __pycache__
+tests/outdir_test/
 output
 *idea
 *.gif

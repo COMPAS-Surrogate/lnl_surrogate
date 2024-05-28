@@ -2,12 +2,16 @@ import glob
 import os
 
 import matplotlib.pyplot as plt
+from acquisition_plotting.trieste import (
+    plot_trieste_evaluations,
+    plot_trieste_objective,
+)
 
 from ..logger import logger
 from .image_utils import make_gif
 from .overlaid_corner import plot_overlaid_corner
-from .plot_bo_corners import plot_evaluations, plot_model_partial_dependence
 from .plot_bo_metrics import plot_bo_metrics
+from .plot_evaluation_corner import plot_evaluation_corner
 
 
 def save_diagnostic_plots(
@@ -33,13 +37,19 @@ def save_diagnostic_plots(
     bo_fig = plot_bo_metrics(inpts, outpts, model, truth=true_lnl)
     bo_fig.savefig(f"{plot_out}/bo_metrics_{label}.png", bbox_inches="tight")
 
-    evl_fig = plot_evaluations(inpts, outpts, model, search_space, truth=truth)
+    kwgs = dict(
+        in_pts=inpts,
+        out_pts=outpts,
+        trieste_model=model,
+        trieste_space=search_space,
+        truth=truth,
+    )
+    evl_fig = plot_trieste_evaluations(**kwgs)
     evl_fig.savefig(f"{plot_out}/eval_{label}.png", bbox_inches="tight")
 
-    # pd_fig = plot_model_partial_dependence(
-    #     inpts, outpts, model, search_space, truth=truth
-    # )
-    # pd_fig.savefig(f"{plot_out}/func_{label}.png", bbox_inches="tight")
+    pd_fig = plot_trieste_objective(**kwgs)
+    pd_fig.savefig(f"{plot_out}/func_{label}.png", bbox_inches="tight")
+    plot_evaluation_corner(inpts).savefig(f"{plot_out}/corner_{label}.png")
 
     if model_plotter:
         model_plotter(model, data, search_space, truth=truth).savefig(
