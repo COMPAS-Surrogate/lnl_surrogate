@@ -86,7 +86,7 @@ def monkeypatch_lnl(monkeypatch):
 
 @pytest.fixture
 def training_csv():
-    fpath = os.path.join(HERE, "data.csv")
+    fpath = os.path.join(HERE, "test_ml_data/data.csv")
     if not os.path.exists(fpath):
         # generate CSV with aSF,dSF,mu_z,sigma_0,lnl as columns
         np.random.seed(1)
@@ -95,6 +95,7 @@ def training_csv():
         for p in samps.columns:
             ln_pdf = norm(np.mean(samps[p]), np.std(samps[p])).logpdf(samps[p])
             lnl += ln_pdf
+        os.makedirs(os.path.dirname(fpath), exist_ok=True)
         samps["lnl"] = lnl
         samps.to_csv(fpath, index=False)
     return fpath

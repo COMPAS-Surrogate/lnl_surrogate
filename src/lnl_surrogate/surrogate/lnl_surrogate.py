@@ -7,6 +7,9 @@ import pandas as pd
 import tensorflow as tf
 from bilby.core.likelihood import Likelihood
 from bilby.core.prior import Normal
+from lnl_computer.cosmic_integration.star_formation_paramters import (
+    get_latex_labels,
+)
 from trieste.data import Dataset
 from trieste.models.utils import get_module_with_variables
 
@@ -38,6 +41,7 @@ class LnLSurrogate(Likelihood):
         self.true_lnl = truths.get("lnl", None)
         self.reference_lnl = reference_lnl
         self.param_keys = list(data.columns)[:-1]  # the last column is the lnl
+        self.param_latex = get_latex_labels(self.param_keys)
         self.parameters = {k: np.nan for k in self.param_keys}
         self.variable_lnl = variable_lnl
 
@@ -133,8 +137,19 @@ class LnLSurrogate(Likelihood):
         model_type: str,
         label: str,
         plot: bool = False,
+        lnl_threshold: float = None,
     ):
         data = pd.read_csv(csv)
+
+        # keep data with LnLs that are within the threshold
+        if lnl_threshold:
+            n_init = len(data)
+            data = data[np.abs(data["lnl"]) < lnl_threshold]
+            n_final = len(data)
+            print(
+                f"Removed {n_init - n_final} ({n_init} --> {n_final} Training points)"
+            )
+
         params = _get_params_from_df(data)
         dataset = _df_to_dataset(data)
         meta_fn = csv.replace(csv.split("/")[-1], "meta_data.json")
@@ -161,8 +176,9 @@ class LnLSurrogate(Likelihood):
             search_space=get_search_space(self.param_keys),
             outdir=kwargs.get("outdir", "outdir"),
             label=kwargs.get("label", "lnl_surrogate"),
-            truth=self.truths,
+            truths=self.truths,
             reference_lnl=self.reference_lnl,
+            axis_labels=self.param_latex,
         )
 
 

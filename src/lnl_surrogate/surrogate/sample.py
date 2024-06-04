@@ -84,7 +84,7 @@ def sample_lnl_surrogate(
     plot_overlaid_corner(
         [result.posterior, variable_lnl_result.posterior],
         sample_labels=["LnL surrogate", "Variable LnL surrogate"],
-        axis_labels=lnl_surrogate.param_keys,
+        axis_labels=lnl_surrogate.para,
         colors=[ORIG_COL, VAR_COL],
         fname=f"{outdir}/{label}_variablecompare_corner.png",
         truths=truths,
@@ -93,9 +93,45 @@ def sample_lnl_surrogate(
     plot_overlaid_corner(
         [result.posterior, result_highres.posterior],
         sample_labels=["1K MCMC", "3k MCMC"],
-        axis_labels=lnl_surrogate.param_keys,
+        axis_labels=lnl_surrogate.param_latex,
         colors=[ORIG_COL, HIGHRES_COL],
         fname=f"{outdir}/{label}_mcmccompare_corner.png",
         truths=truths,
         label=f"#pts: {lnl_surrogate.n_training_points}",
+    )
+
+
+def run_sampler(
+    lnl_surrogate, outdir, label=None, verbose=False, mcmc_kwargs={}
+):
+    prior = get_star_formation_prior(parameters=lnl_surrogate.param_keys)
+    label = (
+        label
+        if label is not None
+        else f"surrogate_npts{lnl_surrogate.n_training_points}"
+    )
+    truths = {}
+    if lnl_surrogate.truths is not None:
+        truths = {k: lnl_surrogate.truths[k] for k in lnl_surrogate.param_keys}
+
+    mcmc_kwargs["nwalkers"] = mcmc_kwargs.get("nwalkers", 10)
+    mcmc_kwargs["iterations"] = mcmc_kwargs.get("iterations", 1000)
+
+    sampler_kwargs = dict(
+        priors=prior,
+        sampler="emcee",
+        injection_parameters=truths,
+        outdir=outdir,
+        clean=True,
+        verbose=verbose,
+        plot=True,
+        **mcmc_kwargs,
+        meta_data=dict(npts=lnl_surrogate.n_training_points),
+    )
+
+    result = bilby.run_sampler(
+        likelihood=lnl_surrogate,
+        label=label,
+        **sampler_kwargs,
+        color=ORIG_COL,
     )

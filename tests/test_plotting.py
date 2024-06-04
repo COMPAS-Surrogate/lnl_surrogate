@@ -3,11 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from lnl_surrogate.plotting import (
-    plot_evaluations,
-    plot_model_partial_dependence,
-    plot_overlaid_corner,
-)
+from lnl_surrogate.plotting import plot_overlaid_corner
 
 
 def _generate_mock_posterior(n, sigma=1.0, mu=0.0, p=1):

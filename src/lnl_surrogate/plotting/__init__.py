@@ -11,7 +11,7 @@ from ..logger import logger
 from .image_utils import make_gif
 from .overlaid_corner import plot_overlaid_corner
 from .plot_bo_metrics import plot_bo_metrics
-from .plot_evaluation_corner import plot_evaluation_corner
+from .plot_lnl_hist import plot_lnl_hist
 
 
 def save_diagnostic_plots(
@@ -23,6 +23,7 @@ def save_diagnostic_plots(
     truth={},
     model_plotter=None,
     reference_lnl=0,
+    axis_labels=None,
     **kwargs,
 ):
     logger.info("Saving diagnostic plots...")
@@ -45,14 +46,18 @@ def save_diagnostic_plots(
         trieste_model=model,
         trieste_space=search_space,
         truth=truth,
+        dim_labels=axis_labels,
+        zscale="linear",
+        **kwargs,
     )
     evl_fig = plot_trieste_evaluations(**kwgs)
-
     evl_fig.savefig(f"{plot_out}/eval_{label}.png", bbox_inches="tight")
 
     pd_fig = plot_trieste_objective(**kwgs)
     pd_fig.savefig(f"{plot_out}/func_{label}.png", bbox_inches="tight")
-    plot_evaluation_corner(inpts).savefig(f"{plot_out}/corner_{label}.png")
+
+    lnl_hist = plot_lnl_hist(outpts)
+    lnl_hist.savefig(f"{plot_out}/lnl_hist_{label}.png", bbox_inches="tight")
 
     if model_plotter:
         model_plotter(model, data, search_space, truth=truth).savefig(
