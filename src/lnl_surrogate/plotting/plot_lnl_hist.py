@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 
+LNL_BINS = np.geomspace(10**-2, 10**2, 50)
+
 
 def plot_lnl_hist(lnls, ax=None, threshold=None, fname=None, **kwargs):
     """Plot the histogram of the log likelihoods."""
@@ -12,10 +14,12 @@ def plot_lnl_hist(lnls, ax=None, threshold=None, fname=None, **kwargs):
         fig, ax = plt.subplots(1, 1, figsize=(6, 4))
     else:
         fig = ax.get_figure()
-    xvals = np.abs(lnls)
-    bins = np.geomspace(0.001, 10**2, 50)
-    ax.hist(xvals, bins=bins, histtype="step", **kwargs, density=True)
+
+    xvals = np.clip(np.abs(lnls), LNL_BINS[0], LNL_BINS[-1])
+    ax.hist(xvals, bins=LNL_BINS, histtype="step", **kwargs)
+
     ax.set_xscale("log")
+
     ax.set_xlabel("Rel Abs LnL")
     if threshold is not None:
         ax.axvline(threshold, color="red", linestyle="--")
@@ -40,6 +44,3 @@ def plot_multiple_lnl_hist(lnl_regex):
 
     plot_lnl_hist(all_lnls, ax=ax2, lw=1, color="tab:red")
     fig.savefig("LNLS.png")
-
-
-plot_multiple_lnl_hist("out_surr_*/round4_650pts/data.csv")

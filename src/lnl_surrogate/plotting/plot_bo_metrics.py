@@ -30,6 +30,7 @@ def plot_bo_metrics(
     color: str = "tab:blue",
     label: str = None,
     init_n_points: int = None,
+    n_points_to_plot: int = 0,
     axes: plt.Axes = None,
     truth: float = None,
 ) -> plt.Figure:
@@ -46,8 +47,15 @@ def plot_bo_metrics(
         init_n_points=init_n_points,
         ax=axes[0],
         true_minimum=truth,
+        n_points_to_plot=n_points_to_plot,
     )
-    plot_distance(query_points, color, label, init_n_points, axes[1])
+    plot_distance(
+        points=query_points,
+        color=color,
+        label=label,
+        ax=axes[1],
+        n_points_to_plot=n_points_to_plot,
+    )
     fig.tight_layout()
     fig.subplots_adjust(hspace=0)
     return fig
@@ -59,6 +67,7 @@ def plot_distance(
     label: str = None,
     init_n_points: int = None,
     ax: plt.Axes = None,
+    n_points_to_plot=0,
 ) -> None:
     """Plot the distance between consecutive y_pts."""
     if ax is None:
@@ -71,10 +80,10 @@ def plot_distance(
             init_n_points, color="gray", linestyle="--", label="Initial y_pts"
         )
 
-    if len(points) > 30:
+    if n_points_to_plot > 0 and len(points) > n_points_to_plot:
         # plot the last 30 y_pts
-        n_calls = n_calls[-30:]
-        distances = distances[-30:]
+        n_calls = n_calls[-n_points_to_plot:]
+        distances = distances[-n_points_to_plot:]
 
     ax.plot(n_calls, distances, color=color, label=label)
     ax.set_xlabel("Num $f(x)$ calls ($n$)")
@@ -89,7 +98,7 @@ def plot_convergence(
     init_n_points: int = None,
     ax: plt.Axes = None,
     true_minimum: float = None,
-    n_points_to_plot: int = 30,
+    n_points_to_plot: int = 0,
 ) -> None:
     """Plot the convergence of the surrogate model."""
     if ax is None:
