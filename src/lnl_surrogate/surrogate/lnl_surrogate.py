@@ -13,6 +13,7 @@ from lnl_computer.cosmic_integration.star_formation_paramters import (
 from trieste.data import Dataset
 from trieste.models.utils import get_module_with_variables
 
+from ..logger import logger
 from ..plotting import save_diagnostic_plots
 from .model import get_model
 from .utils import get_search_space
@@ -54,9 +55,12 @@ class LnLSurrogate(Likelihood):
         y_mean, y_std = self.model.predict(params)
         neg_rel_lnl = y_mean.numpy().flatten()[0]
         unc_lnl = y_std.numpy().flatten()[0]
-        lnl = self.reference_lnl - neg_rel_lnl
+
         if self.variable_lnl:
-            return Normal(mu=lnl, sigma=unc_lnl).sample(1)[0]
+            neg_rel_lnl = Normal(mu=neg_rel_lnl, sigma=unc_lnl).sample(1)[0]
+
+        lnl = self.reference_lnl - neg_rel_lnl
+
         return lnl
 
     @property
@@ -124,11 +128,17 @@ class LnLSurrogate(Likelihood):
         if label is not None:
             outdir = f"{outdir}/{label}"
         model = tf.saved_model.load(f"{outdir}/{MODEL_FNAME}")
-        data = pd.read_csv(f"{outdir}/{DATA_FNAME}")
+        data = pd.read_csv(cls.get_datafname(outdir))
         regret = pd.read_csv(f"{outdir}/{REGRET_FNAME}")
         meta_fname = f"{outdir}/{META_DATA}"
         reference_lnl, truths = _load_metadata(meta_fname)
         return cls(model, data, regret, truths, reference_lnl, variable_lnl)
+
+    @staticmethod
+    def get_datafname(outdir: str, label: str = None):
+        if label is not None:
+            outdir = f"{outdir}/{label}"
+        return f"{outdir}/{DATA_FNAME}"
 
     @classmethod
     def from_csv(
@@ -136,8 +146,10 @@ class LnLSurrogate(Likelihood):
         csv: str,
         model_type: str,
         label: str,
+        outdir: str = "",
         plot: bool = False,
         lnl_threshold: float = None,
+        variable_lnl: bool = False,
     ):
         data = pd.read_csv(csv)
 
@@ -146,8 +158,8 @@ class LnLSurrogate(Likelihood):
             n_init = len(data)
             data = data[np.abs(data["lnl"]) < lnl_threshold]
             n_final = len(data)
-            print(
-                f"Removed {n_init - n_final} ({n_init} --> {n_final} Training points)"
+            logger.info(
+                f"Removed {n_init - n_final} ({n_init} --> {n_final} Training points after thresholding)"
             )
 
         params = _get_params_from_df(data)
@@ -161,11 +173,18 @@ class LnLSurrogate(Likelihood):
             get_search_space(params),
             optimize=True,
         )
-        outdir = f"outdir_{label}"
+        outdir = f"outdir_{label}" if outdir == "" else outdir
         model = _tf_model_from_gpflow(
             model, dataset, f"{outdir}/{MODEL_FNAME}"
         )
-        surrogate = cls(model, data, pd.DataFrame(), truths, reference_lnl)
+        surrogate = cls(
+            model,
+            data,
+            pd.DataFrame(),
+            truths,
+            reference_lnl,
+            variable_lnl=variable_lnl,
+        )
         surrogate.save(outdir, label=label, plots=plot)
         return surrogate
 

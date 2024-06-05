@@ -7,7 +7,7 @@ from click.testing import CliRunner
 from conftest import _mock_lnl_truth
 
 from lnl_surrogate import LnLSurrogate
-from lnl_surrogate.cli import cli_train
+from lnl_surrogate.cli import cli_build_surrogate, cli_train
 
 
 def test_cli(monkeypatch_lnl, mock_data, tmpdir):
@@ -47,3 +47,19 @@ def test_cli(monkeypatch_lnl, mock_data, tmpdir):
     lnl_surr.parameters.update({"aSF": 0.1})
     lnl = lnl_surr.log_likelihood()
     assert isinstance(tf.squeeze(lnl).numpy(), float)
+
+
+def test_builder(tmpdir, training_csv):
+    runner = CliRunner()
+    runner.invoke(
+        cli_build_surrogate,
+        [
+            "--csv",
+            training_csv,
+            "--model_type",
+            "gp",
+            "--outdir",
+            tmpdir,
+            "--lnl-threshold" "50",
+        ],
+    )
