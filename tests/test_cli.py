@@ -62,7 +62,7 @@ def test_builder(tmpdir, training_csv):
             tmpdir,
             "--lnl-threshold",
             "50",
-            "--run-sampler",
+            "--sample",
         ],
     )
     assert result.exit_code == 0, result.output

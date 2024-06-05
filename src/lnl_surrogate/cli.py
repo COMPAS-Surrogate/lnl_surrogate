@@ -168,7 +168,7 @@ def cli_plot_kl_distances(regex):
     default="outdir",
 )
 @click.option(
-    "--plots/no-plots",
+    "--plots/--no-plots",
     show_default=True,
     default=True,
     help="Whether to save plots",
@@ -181,7 +181,7 @@ def cli_plot_kl_distances(regex):
     help="The threshold for the LnL",
 )
 @click.option(
-    "--sample/no-sample",
+    "--sample/--no-sample",
     show_default=True,
     default=True,
     help="Whether to run the sampler with the built surrogate",
