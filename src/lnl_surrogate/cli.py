@@ -167,7 +167,12 @@ def cli_plot_kl_distances(regex):
     help="The output directory for the surrogate model",
     default="outdir",
 )
-@click.option("--plots", "-p", is_flag=True, help="Whether to save plots")
+@click.option(
+    "--plots/no-plots",
+    show_default=True,
+    default=True,
+    help="Whether to save plots",
+)
 @click.option(
     "--lnl-threshold",
     "-t",
@@ -176,8 +181,9 @@ def cli_plot_kl_distances(regex):
     help="The threshold for the LnL",
 )
 @click.option(
-    "--run-sampler",
-    is_flag=True,
+    "--sample/no-sample",
+    show_default=True,
+    default=True,
     help="Whether to run the sampler with the built surrogate",
 )
 def cli_build_surrogate(
