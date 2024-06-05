@@ -156,12 +156,21 @@ def cli_plot_kl_distances(regex):
     "-l",
     type=str,
     required=False,
-    help="The output directory for the surrogate model",
+    help="The output label for the surrogate model",
     default="lnl_surrogate",
+)
+@click.option(
+    "--outdir",
+    "-o",
+    type=str,
+    required=False,
+    help="The output directory for the surrogate model",
+    default="outdir",
 )
 @click.option("--plots", "-p", is_flag=True, help="Whether to save plots")
 @click.option(
-    "--lnl_threshold",
+    "--lnl-threshold",
+    "-t",
     type=float,
     required=False,
     help="The threshold for the LnL",
@@ -175,14 +184,18 @@ def cli_build_surrogate(
     csv: str,
     model_type: str,
     label: str,
+    outdir: str,
     plots: bool,
     lnl_threshold: float,
     run_sampler: bool,
 ):
     surrogate = LnLSurrogate.from_csv(
-        csv, model_type, label, plot=plots, lnl_threshold=lnl_threshold
+        csv,
+        model_type,
+        label=label,
+        outdir=outdir,
+        plot=plots,
+        lnl_threshold=lnl_threshold,
     )
     if run_sampler:
-        sample.run_sampler(
-            surrogate, outdir=outdir, label=thresh_label, verbose=True
-        )
+        sample.run_sampler(surrogate, outdir=outdir, label=label, verbose=True)

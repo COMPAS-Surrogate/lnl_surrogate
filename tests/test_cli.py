@@ -51,7 +51,7 @@ def test_cli(monkeypatch_lnl, mock_data, tmpdir):
 
 def test_builder(tmpdir, training_csv):
     runner = CliRunner()
-    runner.invoke(
+    result = runner.invoke(
         cli_build_surrogate,
         [
             "--csv",
@@ -60,6 +60,9 @@ def test_builder(tmpdir, training_csv):
             "gp",
             "--outdir",
             tmpdir,
-            "--lnl-threshold" "50",
+            "--lnl-threshold",
+            "50",
+            "--run-sampler",
         ],
     )
+    assert result.exit_code == 0, result.output
