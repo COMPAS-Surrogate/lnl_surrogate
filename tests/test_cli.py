@@ -65,4 +65,6 @@ def test_builder(tmpdir, training_csv):
             "--sample",
         ],
     )
-    assert result.exit_code == 0, result.output
+    assert (
+        result.exit_code == 0
+    ), f"Out: {result.output}\nError: {result.exc_info}"

@@ -52,14 +52,27 @@ def save_diagnostic_plots(
         zscale="linear",
         **kwargs,
     )
-    evl_fig = plot_trieste_evaluations(**kwgs)
-    evl_fig.savefig(f"{plot_out}/eval_{label}.png", bbox_inches="tight")
 
-    pd_fig = plot_trieste_objective(**kwgs)
-    pd_fig.savefig(f"{plot_out}/func_{label}.png", bbox_inches="tight")
+    try:
+        fname = f"{plot_out}/eval_{label}.png"
+        plot_trieste_evaluations(**kwgs).savefig(fname, bbox_inches="tight")
+        logger.info(f"Saved {fname}")
+    except Exception as e:
+        logger.error(f"Error saving {fname} plot: {e}")
 
-    lnl_hist = plot_lnl_hist(outpts)
-    lnl_hist.savefig(f"{plot_out}/lnl_hist_{label}.png", bbox_inches="tight")
+    try:
+        fname = f"{plot_out}/objective_{label}.png"
+        plot_trieste_objective(**kwgs).savefig(fname, bbox_inches="tight")
+        logger.info(f"Saved {fname}")
+    except Exception as e:
+        logger.error(f"Error saving {fname} plot: {e}")
+
+    try:
+        fname = f"{plot_out}/lnl_hist_{label}.png"
+        plot_lnl_hist(outpts).savefig(fname, bbox_inches="tight")
+        logger.info(f"Saved {fname}")
+    except Exception as e:
+        logger.error(f"Error saving {fname} plot: {e}")
 
     if model_plotter:
         model_plotter(model, data, search_space, truth=truth).savefig(
