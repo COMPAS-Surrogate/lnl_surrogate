@@ -32,6 +32,9 @@ from .data_manager import DataManager
 __all__ = ["OptimisationManager"]
 
 
+MAX_REL_NEG_LNL = 50
+
+
 class OptimisationManager:
     def __init__(
         self,
@@ -99,7 +102,13 @@ class OptimisationManager:
             """
             pdict = {p[i]: _xi[i] for i in range(len(p))}
             lnl, _ = f(sf_sample=pdict)
-            return -1 * (lnl - ref_lnl)
+            rel_neg_lnl = -1 * (lnl - ref_lnl)
+
+            # Limit the upper value to MAX_REL_NEG_LNL
+            if rel_neg_lnl > MAX_REL_NEG_LNL:
+                rel_neg_lnl = MAX_REL_NEG_LNL
+
+            return rel_neg_lnl
 
         return _min_fn
 
