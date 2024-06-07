@@ -4,6 +4,7 @@ import click
 import matplotlib.pyplot as plt
 
 from .kl_distance_computer import get_list_of_kl_distances
+from .surrogate import build_surrogate
 from .surrogate.lnl_surrogate import LnLSurrogate
 from .surrogate.sample import run_sampler
 from .surrogate.train import train
@@ -195,13 +196,12 @@ def cli_build_surrogate(
     lnl_threshold: float,
     sample: bool,
 ):
-    surrogate = LnLSurrogate.from_csv(
-        csv,
-        model_type,
+    build_surrogate(
+        csv=csv,
+        model_type=model_type,
         label=label,
         outdir=outdir,
-        plot=plots,
+        plots=plots,
         lnl_threshold=lnl_threshold,
+        sample=sample,
     )
-    if sample:
-        run_sampler(surrogate, outdir=outdir, label=label, verbose=True)

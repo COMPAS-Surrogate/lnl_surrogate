@@ -156,10 +156,13 @@ class LnLSurrogate(Likelihood):
         # keep data with LnLs that are within the threshold
         if lnl_threshold:
             n_init = len(data)
-            data = data[np.abs(data["lnl"]) < lnl_threshold]
-            n_final = len(data)
+            # data = data[np.abs(data["lnl"]) < lnl_threshold]
+            # set all LnL > lnl_threshold to lnl_threshold
+            n_edits = len(data[data["lnl"] > lnl_threshold])
+
+            data["lnl"][data["lnl"] > lnl_threshold] = lnl_threshold
             logger.info(
-                f"Removed {n_init - n_final} ({n_init} --> {n_final} Training points after thresholding)"
+                f"Edit LnL for {n_init - n_edits} ({n_init} --> {n_edits} Training points after thresholding)"
             )
 
         params = _get_params_from_df(data)
