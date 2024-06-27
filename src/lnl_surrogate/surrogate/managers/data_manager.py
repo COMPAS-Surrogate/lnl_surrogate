@@ -46,9 +46,11 @@ class DataManager:
         )[0]
 
     def _load_reference(
-        self, reference: Union[Dict[str, float], str]
+        self, reference: Union[Dict[str, float], str] = DEFAULT_DICT
     ) -> OrderedDict:
         _ref = self.observation.cosmological_parameters
+        if _ref is None:
+            _ref = DEFAULT_DICT
 
         if isinstance(reference, dict):
             _ref = reference
