@@ -22,10 +22,10 @@ from lnl_surrogate.surrogate import LnLSurrogate, train
 def _plot_res(model, data, search_space, **kwargs):
     x = np.linspace(MINX, MAXX, 100).reshape(-1, 1)
 
-    ref_lnl = kwargs["truth"]["lnl"]
+    ref_lnl = kwargs["reference_param"]["lnl"]
 
     # model_gp = -(lnl - reference_lnl)
-    # lnl_obj = LnLSurrogate(model, data, regret=pd.DataFrame(), reference_lnl=ref_lnl, truths=kwargs["truth"])
+    # lnl_obj = LnLSurrogate(model, data, regret=pd.DataFrame(), reference_lnl=ref_lnl, reference_param=kwargs["reference_param"])
 
     true_y = -(NORM.logpdf(x) - ref_lnl)
     model_y, model_yunc = model.predict(x)
@@ -102,7 +102,7 @@ def test_simple(mock_data, tmpdir):
 
     duration = 1
     true_aSF = 0.01
-    obs = MockObservation.from_npz(mock_data.observations_filename)
+    obs = MockObservation.load(mock_data.observations_filename)
     true_lnl, _ = McZGrid.lnl(
         compas_h5_path=mock_data.compas_filename,
         sf_sample={"aSF": true_aSF},
@@ -129,7 +129,7 @@ def test_simple(mock_data, tmpdir):
     #     n_rounds=5,
     #     n_pts_per_round=5,
     #     outdir=outdir,
-    #     truth=dict(aSF=true_aSF, lnl=true_lnl),
+    #     reference_param=dict(aSF=true_aSF, lnl=ref_lnl),
     #     model_plotter=_plot_res,
     #     noise_level=1,
     # )

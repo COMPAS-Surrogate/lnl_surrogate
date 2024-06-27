@@ -30,8 +30,6 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
 ]
 dependencies = [
-    "compas_python_utils@git+https://github.com/TeamCOMPAS/COMPAS.git",
-    "lnl_computer@git+https://github.com/COMPAS-Surrogate/lnl_computer.git",
     "trieste[plotting]",
     "scikit-optimize",
     "gpflow",
@@ -43,6 +41,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "compas_python_utils@git+https://github.com/TeamCOMPAS/COMPAS.git",
+    "lnl_computer@git+https://github.com/COMPAS-Surrogate/lnl_computer.git",
     "pytest>=6.0",
     "pytest-cov>=4.1.0",
     "coverage[toml]",

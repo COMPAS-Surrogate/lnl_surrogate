@@ -1,4 +1,5 @@
 import os
+from functools import wraps
 from typing import Callable, Dict, List, Optional, Union
 
 import pandas as pd
@@ -7,7 +8,6 @@ from tqdm.auto import trange
 from trieste.acquisition import AcquisitionRule as Rule
 from trieste.bayesian_optimizer import OptimizationResult
 
-from ..kl_distance_computer import plot_kl_distances
 from ..logger import Suppressor, logger, set_log_verbosity
 from ..plotting import save_diagnostic_plots, save_gifs
 from .lnl_surrogate import LnLSurrogate
@@ -27,16 +27,17 @@ class Trainer:
         params=None,
         mcz_obs_filename: Optional[Union[str]] = None,
         duration: Optional[float] = 1,
-        acquisition_fns=None,
+        acquisition_fns=["pv", "ei"],
         n_init: Optional[int] = 5,
         n_rounds: Optional[int] = 5,
         n_pts_per_round: Optional[int] = 10,
         outdir: Optional[str] = "outdir",
         model_plotter: Optional[Callable] = None,
-        truth: Optional[Union[Dict[str, float], str]] = None,
+        reference_param: Optional[Union[Dict[str, float], str]] = None,
         noise_level: Optional[float] = 1e-5,
         save_plots: Optional[bool] = True,
         verbose: Optional[int] = 0,
+        max_threshold: Optional[float] = 50,
     ):
         """
         Train a surrogate model using the given data and parameters.
@@ -64,7 +65,7 @@ class Trainer:
             outdir=outdir,
             mcz_obs_filename=mcz_obs_filename,
             params=params,
-            truths=truth,
+            reference_param=reference_param,
         )
         self.opt_mngr = OptimisationManager(
             datamanager=self.data_mngr,
@@ -72,6 +73,7 @@ class Trainer:
             n_init=n_init,
             model_type=model_type,
             noise_level=noise_level,
+            max_threshold=max_threshold,
         )
 
         self.n_rounds: int = n_rounds
@@ -88,7 +90,7 @@ class Trainer:
             "Trainer("
             f"model_type={self.model}, "
             f"params={self.data_mngr.params}, "
-            f"truths={self.data_mngr.truths}, "
+            f"truths={self.data_mngr.reference_param}, "
             f"pts=[init{self.opt_mngr.init_data}, "
             f"rnds={self.n_rounds}x{self.n_pts_per_round}pts)"
         )
@@ -117,11 +119,6 @@ class Trainer:
         if self.save_plots:
             save_gifs(self.outdir)
 
-        plot_kl_distances(
-            regex=os.path.join(self.outdir, "out_mcmc/*json"),
-            outdir=f"{self.outdir}/plots",
-        )
-
     def _ith_optimization_round(self, i: int, rule: Rule):
         # optimisation stage
         self.opt_mngr.optimize(
@@ -142,7 +139,7 @@ class Trainer:
                 self.opt_mngr.search_space,
                 self.outdir,
                 label,
-                truth=self.data_mngr.truths,
+                truth=self.data_mngr.reference_param,
                 model_plotter=self.model_plotter,
                 reference_lnl=self.data_mngr.reference_lnl,
             )
@@ -157,7 +154,7 @@ class Trainer:
         lnl_surrogate = LnLSurrogate.from_bo_result(
             bo_result=self.opt_mngr.result,
             params=self.data_mngr.params,
-            truths=self.data_mngr.truths,
+            truths=self.data_mngr.reference_param,
             outdir=self.outdir,
             reference_lnl=self.data_mngr.reference_lnl,
             label=label,
@@ -191,6 +188,7 @@ class Trainer:
         self.regret_data.append(current_regret)
 
 
+@wraps(Trainer)
 def train(*args, **kwargs) -> OptimizationResult:
     trainer = Trainer(*args, **kwargs)
     trainer.train_loop()

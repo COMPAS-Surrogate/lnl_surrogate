@@ -3,7 +3,6 @@ import os
 import click
 import matplotlib.pyplot as plt
 
-from .kl_distance_computer import get_list_of_kl_distances
 from .surrogate import build_surrogate
 from .surrogate.lnl_surrogate import LnLSurrogate
 from .surrogate.sample import run_sampler
@@ -55,7 +54,7 @@ from .surrogate.train import train
     type=str,
     multiple=True,
     required=False,
-    default=["PredictiveVariance", "ExpectedImprovement"],
+    default=["pv", "ei"],
     help="The acquisition functions to use (PredictiveVariance pv, ExpectedImprovement ei)",
 )
 @click.option(
@@ -88,10 +87,17 @@ from .surrogate.train import train
     help="Whether to save plots",
 )
 @click.option(
-    "--truth",
+    "--reference_param",
     type=str,
     required=False,
-    help="The JSON file containing the true parameters",
+    help="The JSON file containing the reference/True parameters",
+)
+@click.option(
+    "--max_threshold",
+    type=float,
+    required=False,
+    default=50,
+    help="The JSON file containing the reference/True parameters",
 )
 def cli_train(
     compas_h5_filename,
@@ -104,7 +110,8 @@ def cli_train(
     n_rounds,
     n_pts_per_round,
     save_plots,
-    truth,
+    reference_param,
+    max_threshold,
 ):
     train(
         model_type="gp",
@@ -118,25 +125,9 @@ def cli_train(
         n_rounds=n_rounds,
         n_pts_per_round=n_pts_per_round,
         save_plots=save_plots,
-        truth=truth,
+        reference_param=reference_param,
+        max_threshold=max_threshold,
     )
-
-
-@click.command("plot_kl_distances")
-@click.option(
-    "--regex",
-    "-r",
-    type=str,
-    required=True,
-    help="The regex to match the result files",
-)
-def cli_plot_kl_distances(regex):
-    npts, kl_distances = get_list_of_kl_distances(regex)
-    plt.plot(npts, kl_distances)
-    plt.xlabel("Number of y_pts")
-    plt.ylabel("KL Divergence")
-    dirname = os.path.dirname(regex)
-    plt.savefig(os.path.join(dirname, "kl_distances.png"))
 
 
 @click.command(

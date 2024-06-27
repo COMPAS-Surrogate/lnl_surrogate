@@ -3,7 +3,8 @@ import os.path
 from collections import OrderedDict
 from typing import Dict, List, Optional, Union
 
-from lnl_computer.observation.mock_observation import MockObservation
+from lnl_computer.cosmic_integration.mcz_grid import McZGrid
+from lnl_computer.observation import Observation, load_observation
 
 
 class DataManager:
@@ -14,7 +15,7 @@ class DataManager:
         outdir: str,
         params: Optional[List[str]] = None,
         mcz_obs_filename: Optional[str] = None,
-        truths: Optional[Union[str, Dict]] = None,
+        reference_param: Optional[Union[str, Dict]] = None,
     ):
         self.outdir = outdir
         self.duration = duration
@@ -23,52 +24,47 @@ class DataManager:
         self.params = params if not None else ["aSF", "dSF", "sigma_0", "mu_z"]
 
         # loaded attributes
-        self.mock_observation = self._load_mock_observation()
-        self.mcz_obs = self.mock_observation.mcz
-        self.truths: OrderedDict = self._load_truths(truths)
-        self.mock_observation.plot().savefig(
-            f"{self.outdir}/mock_observation.png"
+        self.observation: Observation = load_observation(mcz_obs_filename)
+        self.reference_param: OrderedDict = self._load_reference(
+            reference_param
         )
+        self.observation.plot(f"{self.outdir}/observation.png")
 
-    def _load_mock_observation(self) -> MockObservation:
-        if self.mcz_obs_filename is None:
-            return MockObservation.from_compas_h5(
-                self.compas_h5_filename,
-                outdir=self.outdir,
-                duration=self.duration,
-            )
-        return MockObservation.from_npz(self.mcz_obs_filename)
-
-    def _compute_lnl_at_true(self, sf_sample: dict) -> float:
-        return self.mock_observation.mcz_grid.lnl(
-            mcz_obs=self.mock_observation.mcz,
+    def _compute_lnl_at_reference(self, sf_sample: dict = None) -> float:
+        if sf_sample is None:
+            sf_sample = self.observation.cosmological_parameters
+        return McZGrid.lnl(
+            sf_sample=sf_sample,
+            mcz_obs=self.observation,
             duration=self.duration,
             compas_h5_path=self.compas_h5_filename,
-            sf_sample=self.mock_observation.mcz_grid.cosmological_parameters,
             n_bootstraps=0,
             outdir=self.outdir,
         )[0]
 
-    def _load_truths(self, truths) -> OrderedDict:
-        _truths = self.mock_observation.mcz_grid.cosmological_parameters
+    def _load_reference(
+        self, reference: Union[Dict[str, float], str]
+    ) -> OrderedDict:
+        _ref = self.observation.cosmological_parameters
 
-        if isinstance(truths, dict):
-            _truths = truths
-        elif isinstance(truths, str) and os.path.isfile(truths):
-            with open(truths, "r") as f:
-                _truths = json.load(f)
-        else:
-            _truths["lnl"] = self._compute_lnl_at_true(_truths)
+        if isinstance(reference, dict):
+            _ref = reference
+        elif isinstance(reference, str) and os.path.isfile(reference):
+            with open(reference, "r") as f:
+                _ref = json.load(f)
 
-        if "muz" in _truths:
-            _truths["mu_z"] = _truths.pop("muz")
-        if "sigma0" in _truths:
-            _truths["sigma_0"] = _truths.pop("sigma0")
+        if not _ref.get("lnl", 0):
+            _ref["lnl"] = self._compute_lnl_at_reference(_ref)
 
-        ordered_t = OrderedDict({p: _truths[p] for p in self.params})
-        ordered_t["lnl"] = _truths["lnl"]
+        if "muz" in _ref:
+            _ref["mu_z"] = _ref.pop("muz")
+        if "sigma0" in _ref:
+            _ref["sigma_0"] = _ref.pop("sigma0")
+
+        ordered_t = OrderedDict({p: _ref[p] for p in self.params})
+        ordered_t["lnl"] = _ref["lnl"]
         return ordered_t
 
     @property
     def reference_lnl(self) -> float:
-        return self.truths.get("lnl", 0)
+        return self.reference_param.get("lnl", 0)

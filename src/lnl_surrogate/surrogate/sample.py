@@ -47,8 +47,11 @@ def sample_lnl_surrogate(
         else f"surrogate_npts{lnl_surrogate.n_training_points}"
     )
     truths = {}
-    if lnl_surrogate.truths is not None:
-        truths = {k: lnl_surrogate.truths[k] for k in lnl_surrogate.param_keys}
+    if lnl_surrogate.reference_param is not None:
+        truths = {
+            k: lnl_surrogate.reference_param[k]
+            for k in lnl_surrogate.param_keys
+        }
 
     mcmc_kwargs["nwalkers"] = mcmc_kwargs.get("nwalkers", 10)
     mcmc_kwargs["iterations"] = mcmc_kwargs.get("iterations", 1000)
@@ -133,8 +136,11 @@ def run_sampler(
         else f"surrogate_npts{lnl_surrogate.n_training_points}"
     )
     truths = {}
-    if lnl_surrogate.truths is not None:
-        truths = {k: lnl_surrogate.truths[k] for k in lnl_surrogate.param_keys}
+    if lnl_surrogate.reference_param is not None:
+        truths = {
+            k: lnl_surrogate.reference_param[k]
+            for k in lnl_surrogate.param_keys
+        }
 
     mcmc_kwargs["nwalkers"] = mcmc_kwargs.get("nwalkers", 10)
     mcmc_kwargs["iterations"] = mcmc_kwargs.get("iterations", 1000)

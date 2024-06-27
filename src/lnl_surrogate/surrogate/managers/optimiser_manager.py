@@ -32,9 +32,6 @@ from .data_manager import DataManager
 __all__ = ["OptimisationManager"]
 
 
-MAX_REL_NEG_LNL = 50
-
-
 class OptimisationManager:
     def __init__(
         self,
@@ -43,14 +40,16 @@ class OptimisationManager:
         n_init: int,
         model_type: str,
         noise_level: float = 1e-5,
+        max_threshold: float = 500,
     ):
         self._data_mngr = datamanager
         self._p = self._data_mngr.params
         self.n_init = n_init
+        self.max_threshold = max_threshold
 
         # setup optimisation variables
         self.search_space = get_search_space(self._p)
-        self._acquisiton_fn = dict(
+        self._acquisiton_fn_table = dict(
             ei=ExpectedImprovement(search_space=self.search_space),
             nlcb=NegativeLowerConfidenceBound(beta=1.96),
             pv=PredictiveVariance(jitter=DEFAULTS.JITTER),
@@ -59,7 +58,11 @@ class OptimisationManager:
             ),
             aei=AugmentedExpectedImprovement(),
         )
-        self.learning_rules = self.__load_rules(acquisition_fns)
+        self.acquisition_fns = [
+            self._acquisiton_fn_table[af] for af in acquisition_fns
+        ]
+
+        self.learning_rules = self.__load_rules()
         self._neg_rel_lnl_fn = self.__create_neg_rel_lnl_fn()
         self.__observer = self.__generate_observer()
         self.init_data = self.__observer(self.search_space.sample(n_init))
@@ -83,7 +86,7 @@ class OptimisationManager:
         os.makedirs(out, exist_ok=True)
         f = partial(
             McZGrid.lnl,
-            mcz_obs=self._data_mngr.mcz_obs,
+            mcz_obs=self._data_mngr.observation,
             duration=self._data_mngr.duration,
             compas_h5_path=self._data_mngr.compas_h5_filename,
             n_bootstraps=0,
@@ -92,7 +95,7 @@ class OptimisationManager:
         )
 
         p = self._data_mngr.params
-        ref_lnl = self._data_mngr.truths.get("lnl", 0)
+        ref_lnl = self._data_mngr.reference_param.get("lnl", 0)
         assert isinstance(ref_lnl, float)
 
         def _min_fn(_xi: np.ndarray):
@@ -105,8 +108,8 @@ class OptimisationManager:
             rel_neg_lnl = -1 * (lnl - ref_lnl)
 
             # Limit the upper value to MAX_REL_NEG_LNL
-            if rel_neg_lnl > MAX_REL_NEG_LNL:
-                rel_neg_lnl = MAX_REL_NEG_LNL
+            if rel_neg_lnl > self.max_threshold:
+                rel_neg_lnl = self.max_threshold
 
             return rel_neg_lnl
 
@@ -124,13 +127,8 @@ class OptimisationManager:
 
         return mk_observer(_f)
 
-    def __load_rules(
-        self, acquisition_fns: List[Union[str, Callable]]
-    ) -> List[Rule]:
-        return [
-            EfficientGlobalOptimization(self._acquisiton_fn.get(af, af))
-            for af in acquisition_fns
-        ]
+    def __load_rules(self) -> List[Rule]:
+        return [EfficientGlobalOptimization(af) for af in self.acquisition_fns]
 
     def get_ith_rule(self, i: int) -> Rule:
         return self.learning_rules[i % len(self.learning_rules)]

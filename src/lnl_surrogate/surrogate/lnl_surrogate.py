@@ -30,17 +30,16 @@ class LnLSurrogate(Likelihood):
         model: tf.keras.Model,
         data: pd.DataFrame,
         regret: pd.DataFrame,
-        truths: Dict[str, float] = {},
+        reference_param: Dict[str, float] = {},
         reference_lnl: float = 0,
         variable_lnl: bool = False,
     ):
         super().__init__()
         self.model = model
         self.data = data
-        self.truths = truths
+        self.reference_param = reference_param
         self.regret = regret
-        self.true_lnl = truths.get("lnl", None)
-        self.reference_lnl = reference_lnl
+        self.reference_lnl = reference_param.get("lnl", None)
         self.param_keys = list(data.columns)[:-1]  # the last column is the lnl
         self.param_latex = get_latex_labels(self.param_keys)
         self.parameters = {k: np.nan for k in self.param_keys}
@@ -101,7 +100,7 @@ class LnLSurrogate(Likelihood):
             model,
             dataset,
             regret=regret,
-            truths=truths,
+            reference_param=truths,
             reference_lnl=reference_lnl,
         )
 
@@ -116,7 +115,7 @@ class LnLSurrogate(Likelihood):
         with open(f"{outdir}/{META_DATA}", "w") as f:
             meta_data = {
                 "reference_lnl": self.reference_lnl,
-                **self.truths,
+                **self.reference_param,
             }
             json.dump(meta_data, f)
 
@@ -198,7 +197,7 @@ class LnLSurrogate(Likelihood):
             search_space=get_search_space(self.param_keys),
             outdir=kwargs.get("outdir", "outdir"),
             label=kwargs.get("label", "lnl_surrogate"),
-            truths=self.truths,
+            truths=self.reference_param,
             reference_lnl=self.reference_lnl,
             axis_labels=self.param_latex,
         )
