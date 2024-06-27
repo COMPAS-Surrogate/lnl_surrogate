@@ -1,12 +1,15 @@
 .DS_Store
 .ipynb_checkpoints
+out_*
 *.log
 build
 __pycache__
 tests/outdir_test/
 tests/test_ml_data
 output
+outdir_test/
 *idea
+tests/outdir_thresholded/
 *.gif
 venv
 outdir/

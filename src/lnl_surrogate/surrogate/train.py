@@ -4,6 +4,9 @@ from typing import Callable, Dict, List, Optional, Union
 
 import pandas as pd
 import tensorflow as tf
+from lnl_computer.cosmic_integration.star_formation_paramters import (
+    DEFAULT_DICT,
+)
 from tqdm.auto import trange
 from trieste.acquisition import AcquisitionRule as Rule
 from trieste.bayesian_optimizer import OptimizationResult
@@ -33,7 +36,7 @@ class Trainer:
         n_pts_per_round: Optional[int] = 10,
         outdir: Optional[str] = "outdir",
         model_plotter: Optional[Callable] = None,
-        reference_param: Optional[Union[Dict[str, float], str]] = None,
+        reference_param: Optional[Union[Dict[str, float], str]] = DEFAULT_DICT,
         noise_level: Optional[float] = 1e-5,
         save_plots: Optional[bool] = True,
         verbose: Optional[int] = 0,
