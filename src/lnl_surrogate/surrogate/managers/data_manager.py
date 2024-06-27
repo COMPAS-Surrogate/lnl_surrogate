@@ -4,6 +4,9 @@ from collections import OrderedDict
 from typing import Dict, List, Optional, Union
 
 from lnl_computer.cosmic_integration.mcz_grid import McZGrid
+from lnl_computer.cosmic_integration.star_formation_paramters import (
+    DEFAULT_DICT,
+)
 from lnl_computer.observation import Observation, load_observation
 
 
@@ -15,7 +18,7 @@ class DataManager:
         outdir: str,
         params: Optional[List[str]] = None,
         mcz_obs_filename: Optional[str] = None,
-        reference_param: Optional[Union[str, Dict]] = None,
+        reference_param: Optional[Union[str, Dict]] = DEFAULT_DICT,
     ):
         self.outdir = outdir
         self.duration = duration
