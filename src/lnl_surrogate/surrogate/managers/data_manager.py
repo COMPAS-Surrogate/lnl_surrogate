@@ -56,6 +56,11 @@ class DataManager:
             with open(reference, "r") as f:
                 _ref = json.load(f)
 
+        if "sigma0" in _ref:
+            _ref["sigma_0"] = _ref.pop("sigma0")
+        if "muz" in _ref:
+            _ref["mu_z"] = _ref.pop("muz")
+
         if not _ref.get("lnl", 0):
             _ref["lnl"] = self._compute_lnl_at_reference(_ref)
 
