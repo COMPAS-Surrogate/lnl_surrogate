@@ -9,7 +9,7 @@ from lnl_surrogate.surrogate import LnLSurrogate
 
 
 def __generate_mock_csv(path):
-    params = ["aSF", "mu_z"]
+    params = ["aSF", "muz"]
     prior = get_star_formation_prior(parameters=params)
     samples = prior.sample(100)
     samples = pd.DataFrame(samples)

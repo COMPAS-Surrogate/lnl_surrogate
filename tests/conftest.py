@@ -88,7 +88,7 @@ def monkeypatch_lnl(monkeypatch):
 def training_csv():
     fpath = os.path.join(HERE, "test_ml_data/data.csv")
     if not os.path.exists(fpath):
-        # generate CSV with aSF,dSF,mu_z,sigma_0,lnl as columns
+        # generate CSV with aSF,dSF,muz,sigma0,lnl as columns
         np.random.seed(1)
         samps = pd.DataFrame(get_star_formation_prior().sample(500))
         lnl = np.ones(len(samps))

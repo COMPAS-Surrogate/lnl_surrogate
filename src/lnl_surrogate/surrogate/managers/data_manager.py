@@ -24,7 +24,7 @@ class DataManager:
         self.duration = duration
         self.compas_h5_filename = compas_h5_filename
         self.mcz_obs_filename = mcz_obs_filename
-        self.params = params if not None else ["aSF", "dSF", "sigma_0", "mu_z"]
+        self.params = params if not None else ["aSF", "dSF", "sigma0", "muz"]
 
         # loaded attributes
         self.observation: Observation = load_observation(mcz_obs_filename)
@@ -58,11 +58,6 @@ class DataManager:
 
         if not _ref.get("lnl", 0):
             _ref["lnl"] = self._compute_lnl_at_reference(_ref)
-
-        if "mu_z" in _ref:
-            _ref["muz"] = _ref.pop("mu_z")
-        if "sigma_0" in _ref:
-            _ref["sigma0"] = _ref.pop("sigma_0")
 
         ordered_t = OrderedDict({p: _ref[p] for p in self.params})
         ordered_t["lnl"] = _ref["lnl"]
