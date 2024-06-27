@@ -24,7 +24,7 @@ class DataManager:
         self.duration = duration
         self.compas_h5_filename = compas_h5_filename
         self.mcz_obs_filename = mcz_obs_filename
-        self.params = params if not None else ["aSF", "dSF", "sigma0", "muz"]
+        self.params = params if not None else ["aSF", "dSF", "sigma_0", "mu_z"]
 
         # loaded attributes
         self.observation: Observation = load_observation(mcz_obs_filename)

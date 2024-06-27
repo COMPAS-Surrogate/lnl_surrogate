@@ -11,7 +11,7 @@ from .surrogate.train import train
 
 @click.command(
     "train_lnl_surrogate",
-    help="Train a COMPAS LnL(d|aSF, dSF, muz, sigma0) surrogate model using Gaussian Processes or Deep Gaussian Processes. "
+    help="Train a COMPAS LnL(d|aSF, dSF, mu_z, sigma_0) surrogate model using Gaussian Processes or Deep Gaussian Processes. "
     "During training, the model will acquire the next best points to be used for training. ",
 )
 @click.option(
@@ -26,8 +26,8 @@ from .surrogate.train import train
     type=str,
     multiple=True,
     required=True,
-    help="The parameters to use [aSF, dSF, sigma0, muz]",
-    default=["aSF", "dSF", "sigma0", "muz"],
+    help="The parameters to use [aSF, dSF, sigma_0, mu_z]",
+    default=["aSF", "dSF", "sigma_0", "mu_z"],
 )
 @click.option(
     "--mcz_obs_filename",

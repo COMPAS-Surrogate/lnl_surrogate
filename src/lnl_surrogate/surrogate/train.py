@@ -47,7 +47,7 @@ class Trainer:
         :param model_type: one of 'gp' or 'deepgp'
         :param mcz_obs: the observed MCZ values
         :param compas_h5_filename: the filename of the compas data
-        :param params: the parameters to use [aSF, dSF, sigma0, muz] or dictionary of true values
+        :param params: the parameters to use [aSF, dSF, sigma_0, mu_z] or dictionary of true values
         :param acquisition_fns: the acquisition functions to use
         :param n_init: the number of initial y_pts to use
         :param n_rounds: the number of rounds of optimization to perform
