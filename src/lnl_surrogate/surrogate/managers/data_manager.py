@@ -56,6 +56,10 @@ class DataManager:
             with open(reference, "r") as f:
                 _ref = json.load(f)
 
+        if not isinstance(_ref, dict):
+            raise ValueError(
+                f"Reference parameter must be a dictionary or a file path to a json file. Got ref: {type(_ref)}, {_ref}"
+            )
         if not _ref.get("lnl", 0):
             _ref["lnl"] = self._compute_lnl_at_reference(_ref)
 
