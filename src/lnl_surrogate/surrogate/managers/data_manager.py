@@ -64,10 +64,10 @@ class DataManager:
         if not _ref.get("lnl", 0):
             _ref["lnl"] = self._compute_lnl_at_reference(_ref)
 
-        if "muz" in _ref:
-            _ref["mu_z"] = _ref.pop("muz")
-        if "sigma0" in _ref:
-            _ref["sigma_0"] = _ref.pop("sigma0")
+        if "mu_z" in _ref:
+            _ref["muz"] = _ref.pop("mu_z")
+        if "sigma_0" in _ref:
+            _ref["sigma0"] = _ref.pop("sigma_0")
 
         ordered_t = OrderedDict({p: _ref[p] for p in self.params})
         ordered_t["lnl"] = _ref["lnl"]
