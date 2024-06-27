@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from .surrogate import build_surrogate
 from .surrogate.lnl_surrogate import LnLSurrogate
 from .surrogate.sample import run_sampler
-from .surrogate.train import train
+from .surrogate.train import DEFAULT_DICT, train
 
 
 @click.command(
@@ -89,6 +89,7 @@ from .surrogate.train import train
 @click.option(
     "--reference_param",
     type=str,
+    default=DEFAULT_DICT,
     required=False,
     help="The JSON file containing the reference/True parameters",
 )
@@ -113,6 +114,7 @@ def cli_train(
     reference_param,
     max_threshold,
 ):
+
     train(
         model_type="gp",
         mcz_obs_filename=mcz_obs_filename,
