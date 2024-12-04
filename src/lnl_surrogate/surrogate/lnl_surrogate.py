@@ -39,7 +39,11 @@ class LnLSurrogate(Likelihood):
         self.data = data
         self.reference_param = reference_param
         self.regret = regret
-        self.reference_lnl = reference_param.get("lnl", None)
+
+        if reference_lnl == 0:
+            reference_lnl = reference_param.get("lnl", 0)
+        self.reference_lnl = reference_lnl
+
         self.param_keys = list(data.columns)[:-1]  # the last column is the lnl
         self.param_latex = get_latex_labels(self.param_keys)
         self.parameters = {k: np.nan for k in self.param_keys}
@@ -159,10 +163,19 @@ class LnLSurrogate(Likelihood):
             # set all LnL > lnl_threshold to lnl_threshold
             n_edits = len(data[data["lnl"] > lnl_threshold])
 
+
             data["lnl"][data["lnl"] > lnl_threshold] = lnl_threshold
             logger.info(
-                f"Edit LnL for {n_init - n_edits} ({n_init} --> {n_edits} Training points after thresholding)"
+                f"Edit LnL for {n_init - n_edits} ({n_init} --> {n_edits} Training points after thresholding (LnL > {lnl_threshold})"
             )
+
+
+            # assert all lnls are not the same
+            if len(data["lnl"].unique()) == 1:
+                raise ValueError(
+                    f"All LnLs are the same after thresholding max(lnl) --> {lnl_threshold}."
+                )
+
 
         params = _get_params_from_df(data)
         dataset = _df_to_dataset(data)

@@ -75,9 +75,13 @@ def save_diagnostic_plots(
         logger.error(f"Error saving {fname} plot: {e}")
 
     if model_plotter:
-        model_plotter(model, data, search_space, truth=truth).savefig(
-            f"{plot_out}/round_{label}.png"
-        )
+        try:
+
+            model_plotter(model, data, search_space, truth=truth).savefig(
+                f"{plot_out}/round_{label}.png"
+            )
+        except Exception as e:
+            logger.error(f"Error saving round plot: {e}")
     plt.close("all")
 
 

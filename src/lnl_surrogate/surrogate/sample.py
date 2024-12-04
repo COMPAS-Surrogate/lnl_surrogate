@@ -136,11 +136,14 @@ def run_sampler(
         else f"surrogate_npts{lnl_surrogate.n_training_points}"
     )
     truths = {}
-    if lnl_surrogate.reference_param is not None:
+
+    if lnl_surrogate.reference_param:
         truths = {
             k: lnl_surrogate.reference_param[k]
             for k in lnl_surrogate.param_keys
         }
+    else:
+        lnl_surrogate.parameters.update(prior.sample())
 
     mcmc_kwargs["nwalkers"] = mcmc_kwargs.get("nwalkers", 10)
     mcmc_kwargs["iterations"] = mcmc_kwargs.get("iterations", 1000)

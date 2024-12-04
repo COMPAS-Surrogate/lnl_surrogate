@@ -7,7 +7,7 @@ from click.testing import CliRunner
 from conftest import _mock_lnl_truth
 
 from lnl_surrogate import LnLSurrogate
-from lnl_surrogate.cli import cli_build_surrogate, cli_train
+from lnl_surrogate.cli import cli_build_surrogate, cli_train, build_surrogate
 
 
 def test_cli(monkeypatch_lnl, mock_data, tmpdir):
@@ -55,6 +55,16 @@ def test_cli(monkeypatch_lnl, mock_data, tmpdir):
 
 
 def test_builder(tmpdir, training_csv):
+    # build_surrogate(
+    #     csv=training_csv,
+    #     model_type='gp',
+    #     label='lnl_surrogate_test',
+    #     outdir=tmpdir,
+    #     plots=True,
+    #     lnl_threshold=100,
+    #     sample=True,
+    # )
+    #
     runner = CliRunner()
     result = runner.invoke(
         cli_build_surrogate,
@@ -66,7 +76,7 @@ def test_builder(tmpdir, training_csv):
             "--outdir",
             tmpdir,
             "--lnl-threshold",
-            "50",
+            "100",
             "--sample",
         ],
     )

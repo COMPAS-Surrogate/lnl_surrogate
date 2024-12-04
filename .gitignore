@@ -54,3 +54,4 @@ docs/studies/outdir/
 
 .pytest_cache/
 /dist/
+/outdir_thresholded/
