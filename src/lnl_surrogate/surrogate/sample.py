@@ -16,6 +16,10 @@ HIGHRES_COL = "tab:green"
 THRESHOLD_COL = "tab:purple"
 
 
+HIGHRES_LABEL = "_highres"
+VARIABLE_LABEL = "_variable_lnl"
+THRESHOLD_LABEL = "_thresholded"
+
 def sample_lnl_surrogate(
     lnl_model_path: str,
     outdir: str,
@@ -76,13 +80,13 @@ def sample_lnl_surrogate(
     )
     thresholeded_result = bilby.run_sampler(
         likelihood=thresholded_lnl_surr,
-        label=label + "_thresholded",
+        label=label + THRESHOLD_LABEL,
         **sampler_kwargs,
         color=THRESHOLD_COL,
     )
     variable_lnl_result = bilby.run_sampler(
         likelihood=variable_lnl_surrogate,
-        label=label + "_variable_lnl",
+        label=label + VARIABLE_LABEL,
         **sampler_kwargs,
         color=VAR_COL,
     )
@@ -90,7 +94,7 @@ def sample_lnl_surrogate(
     sampler_kwargs["iterations"] = 3000
     result_highres = bilby.run_sampler(
         likelihood=lnl_surrogate,
-        label=label + "_highres",
+        label=label + HIGHRES_LABEL,
         **sampler_kwargs,
         color=HIGHRES_COL,
     )

@@ -16,6 +16,7 @@ from ..plotting import save_diagnostic_plots, save_gifs
 from .lnl_surrogate import LnLSurrogate
 from .managers import DataManager, OptimisationManager
 from .sample import sample_lnl_surrogate
+from ..kl_distance.batch_distance_computer import save_distances
 
 __all__ = ["train"]
 
@@ -164,6 +165,15 @@ class Trainer:
             regret=pd.DataFrame(self.regret_data),
         )
         lnl_surrogate.save(self.outdir, label, plots=plots)
+        try:
+            save_distances(
+                res_regex=f"{self.outdir}/out_surr_*/out_mcmc/*variable_lnl_result.json",
+                ref_res_fname=f"{self.outdir}/out_surr_{label}/out_mcmc/{label}_result.json",
+                fname=f"{self.outdir}/kl_distances.csv",
+            )
+        except Exception as e:
+            logger.warning(f"Error saving KL distances: {e}")
+
 
     def __update_regret_data(self):
         min_obs = tf.reduce_min(self.data.observations).numpy()
