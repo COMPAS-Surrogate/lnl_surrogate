@@ -58,21 +58,21 @@ def save_diagnostic_plots(
         plot_trieste_evaluations(**kwgs).savefig(fname, bbox_inches="tight")
         logger.info(f"Saved {fname}")
     except Exception as e:
-        logger.error(f"Error saving {fname} plot: {e}")
+        logger.error(f"Error saving {fname} plot: {e}", exc_info=True)
 
     try:
         fname = f"{plot_out}/objective_{label}.png"
         plot_trieste_objective(**kwgs).savefig(fname, bbox_inches="tight")
         logger.info(f"Saved {fname}")
     except Exception as e:
-        logger.error(f"Error saving {fname} plot: {e}")
+        logger.error(f"Error saving {fname} plot: {e}", exc_info=True)
 
     try:
         fname = f"{plot_out}/lnl_hist_{label}.png"
         plot_lnl_hist(outpts).savefig(fname, bbox_inches="tight")
         logger.info(f"Saved {fname}")
     except Exception as e:
-        logger.error(f"Error saving {fname} plot: {e}")
+        logger.error(f"Error saving {fname} plot: {e}", exc_info=True)
 
     if model_plotter:
         try:
@@ -81,7 +81,7 @@ def save_diagnostic_plots(
                 f"{plot_out}/round_{label}.png"
             )
         except Exception as e:
-            logger.error(f"Error saving round plot: {e}")
+            logger.error(f"Error saving round plot: {e}", exc_info=True)
     plt.close("all")
 
 

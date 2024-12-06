@@ -6,7 +6,7 @@ import warnings
 import bilby
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Union
+from typing import Union, Optional
 import pandas as pd
 from tqdm.auto import tqdm
 from scipy.interpolate import UnivariateSpline
