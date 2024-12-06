@@ -2,7 +2,6 @@ import logging
 import os
 
 import bilby
-import matplotlib.pyplot as plt
 from lnl_computer.cosmic_integration.star_formation_paramters import (
     get_star_formation_prior,
 )

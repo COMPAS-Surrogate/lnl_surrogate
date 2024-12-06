@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 
 from .surrogate import build_surrogate
 from .surrogate.lnl_surrogate import LnLSurrogate
-from .surrogate.sample import run_sampler
+from .surrogate.sample import sample_lnl_surrogate
 from .surrogate.train import DEFAULT_DICT, train
-
+import numpy as np
 
 @click.command(
     "train_lnl_surrogate",
@@ -198,3 +198,46 @@ def cli_build_surrogate(
         lnl_threshold=lnl_threshold,
         sample=sample,
     )
+
+
+
+@click.command(
+    "sample_lnl_surrogate",
+    help="Sample the LNL surrogate model",
+)
+@click.option("--lnl-model-path", "-l", required=True, type=str)
+@click.option("--outdir", "-o", required=True, type=str, help="Output directory of the sampler")
+@click.option("--label", "-l", type=str, help="Label for the output")
+@click.option("--verbose/--no-verbose", default=False)
+@click.option("--mcmc-kwargs", type=dict, default={})
+@click.option("--seed", type=int, default=None)
+@click.option("--nreps", type=int, default=1)
+def cli_sample_lnl_surrogate(
+    lnl_model_path: str,
+    outdir: str,
+    label: str = None,
+    verbose=False,
+    mcmc_kwargs={},
+    seed=None,
+    nreps=1,
+):
+    if nreps == 1:
+        if seed is not None:
+            np.random.seed(seed)
+        sample_lnl_surrogate(
+            lnl_model_path=lnl_model_path,
+            outdir=outdir,
+            label=label,
+            verbose=verbose,
+            mcmc_kwargs=mcmc_kwargs,
+        )
+    else:
+        for i in range(nreps):
+            np.random.seed(i)
+            sample_lnl_surrogate(
+                lnl_model_path=lnl_model_path,
+                outdir=outdir,
+                label=label+f"_{i}",
+                verbose=verbose,
+                mcmc_kwargs=mcmc_kwargs,
+            )
