@@ -43,6 +43,7 @@ dependencies = [
 dev = [
     "compas_python_utils@git+https://github.com/TeamCOMPAS/COMPAS.git",
     "lnl_computer@git+https://github.com/COMPAS-Surrogate/lnl_computer.git",
+    "acquisition_plotting@git+https://github.com/COMPAS-Surrogate/acquisition_plotting.git",
     "pytest>=6.0",
     "pytest-cov>=4.1.0",
     "coverage[toml]",
