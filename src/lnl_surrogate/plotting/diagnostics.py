@@ -13,7 +13,12 @@ from acquisition_plotting.trieste import (
     plot_trieste_objective,
 )
 
-from .logger import logger
+from ..logger import logger
+
+__all__ = [
+    "save_diagnostic_plots",
+    "save_gifs",
+]
 
 
 def save_diagnostic_plots(

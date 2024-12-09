@@ -7,6 +7,7 @@ from lnl_computer.cosmic_integration.star_formation_paramters import (
 )
 
 from ..plotting import plot_overlaid_corner
+from ..plotting.plot_median_model import plot_median_model
 from .lnl_surrogate import LnLSurrogate
 
 ORIG_COL = "tab:blue"
@@ -127,6 +128,14 @@ def sample_lnl_surrogate(
         truths=truths,
         annotate=f"#pts: {thresholded_lnl_surr.n_training_points}",
     )
+
+    # get the median posterior value for each parameter
+    plot_median_model(
+        compas_h5=lnl_surrogate.compas_h5,
+        out_fname=f"{plot_dir}/{label}_median_model.png",
+        bilby_result=result,
+    )
+
 
 
 def run_sampler(
