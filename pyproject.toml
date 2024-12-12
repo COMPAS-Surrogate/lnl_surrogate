@@ -37,6 +37,7 @@ dependencies = [
     "pandas",
     "corner",
     "tqdm",
+    "compas_python_utils",
     "compas_surrogate.lnl_computer",
     "compas_surrogate.ogc4_interface",
     "compas_surrogate.acquisition_plotting",
