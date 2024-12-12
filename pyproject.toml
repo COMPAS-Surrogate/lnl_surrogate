@@ -103,3 +103,4 @@ testpaths = ["tests"]
 train_lnl_surrogate = "lnl_surrogate.cli:cli_train"
 plot_kl_distances = "lnl_surrogate.cli:cli_plot_kl_distances"
 build_surrogate = "lnl_surrogate.cli:cli_build_surrogate"
+sample_lnl_surrogate = "lnl_surrogate.cli:cli_sample_lnl_surrogate"

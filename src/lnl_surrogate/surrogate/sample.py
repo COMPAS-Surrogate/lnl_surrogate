@@ -2,12 +2,12 @@ import logging
 import os
 
 import bilby
-import matplotlib.pyplot as plt
 from lnl_computer.cosmic_integration.star_formation_paramters import (
     get_star_formation_prior,
 )
 
 from ..plotting import plot_overlaid_corner
+from ..plotting.plot_median_model import plot_median_model
 from .lnl_surrogate import LnLSurrogate
 
 ORIG_COL = "tab:blue"
@@ -15,6 +15,10 @@ VAR_COL = "tab:red"
 HIGHRES_COL = "tab:green"
 THRESHOLD_COL = "tab:purple"
 
+
+HIGHRES_LABEL = "_highres"
+VARIABLE_LABEL = "_variable_lnl"
+THRESHOLD_LABEL = "_thresholded"
 
 def sample_lnl_surrogate(
     lnl_model_path: str,
@@ -76,13 +80,13 @@ def sample_lnl_surrogate(
     )
     thresholeded_result = bilby.run_sampler(
         likelihood=thresholded_lnl_surr,
-        label=label + "_thresholded",
+        label=label + THRESHOLD_LABEL,
         **sampler_kwargs,
         color=THRESHOLD_COL,
     )
     variable_lnl_result = bilby.run_sampler(
         likelihood=variable_lnl_surrogate,
-        label=label + "_variable_lnl",
+        label=label + VARIABLE_LABEL,
         **sampler_kwargs,
         color=VAR_COL,
     )
@@ -90,7 +94,7 @@ def sample_lnl_surrogate(
     sampler_kwargs["iterations"] = 3000
     result_highres = bilby.run_sampler(
         likelihood=lnl_surrogate,
-        label=label + "_highres",
+        label=label + HIGHRES_LABEL,
         **sampler_kwargs,
         color=HIGHRES_COL,
     )
@@ -124,6 +128,14 @@ def sample_lnl_surrogate(
         truths=truths,
         annotate=f"#pts: {thresholded_lnl_surr.n_training_points}",
     )
+
+    # get the median posterior value for each parameter
+    plot_median_model(
+        compas_h5=lnl_surrogate.compas_h5,
+        out_fname=f"{plot_dir}/{label}_median_model.png",
+        bilby_result=result,
+    )
+
 
 
 def run_sampler(
