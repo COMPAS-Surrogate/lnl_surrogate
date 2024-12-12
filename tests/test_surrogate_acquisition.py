@@ -1,12 +1,12 @@
 import glob
+
 import pytest
 import tensorflow as tf
 from bilby.core.result import Result
-from conftest import  _mock_lnl_truth
+from common import plotter_1d
+from conftest import _mock_lnl_truth
 
 from lnl_surrogate.surrogate import LnLSurrogate, train
-from common import plotter_1d
-
 
 
 # @pytest.mark.parametrize('model_type', ['gp', 'deepgp'])

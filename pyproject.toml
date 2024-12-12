@@ -1,10 +1,10 @@
-[train-system]
+[build-system]
 requires = [
     "setuptools>=64",
     "setuptools-scm>=8.0",
     "wheel"
 ]
-train-backend = "setuptools.build_meta"
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]  # list of folders that contain the packages (["."] by default)
@@ -14,7 +14,7 @@ namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 
 
 [project]
-name = "lnl_surrogate"
+name = "compas_surrogate.lnl_surrogate"
 dynamic = ["version"] # scm versioning (using tags)
 requires-python = ">=3.8"
 description = "Build a surrogate for your LnL(d|θ)± ΔLnL(d|θ)"
@@ -37,12 +37,13 @@ dependencies = [
     "pandas",
     "corner",
     "tqdm",
+    "compas_surrogate.lnl_computer",
+    "compas_surrogate.ogc4_interface",
+    "compas_surrogate.acquisition_plotting",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "compas_python_utils@git+https://github.com/TeamCOMPAS/COMPAS.git",
-    "lnl_computer@git+https://github.com/COMPAS-Surrogate/lnl_computer.git",
     "pytest>=6.0",
     "pytest-cov>=4.1.0",
     "coverage[toml]",
@@ -54,6 +55,15 @@ dev = [
 
 [tool.setuptools_scm]
 version_file = "src/lnl_surrogate/_version.py"
+
+[tool.semantic_release]
+version_variable = "src/lnl_surrogate/_version.py:__version__"
+version_source = "commit"
+commit_version_number = true
+commit_subject = "chore(release): {version}"
+commit_message = "chore(release): {version}"
+tag_format = "v{version}"
+no_local_version = true
 
 
 [project.urls]  # Optional

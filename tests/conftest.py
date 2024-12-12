@@ -106,5 +106,5 @@ def training_csv():
 @pytest.fixture(autouse=True)
 def skip_on_github(request):
     if RUNNING_ON_GITHUB:
-        if request.node.get_closest_marker('skip_on_github'):
-            pytest.skip('Skipping test on GitHub Actions')
+        if request.node.get_closest_marker("skip_on_github"):
+            pytest.skip("Skipping test on GitHub Actions")

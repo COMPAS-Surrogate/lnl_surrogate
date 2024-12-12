@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -15,9 +14,6 @@ from scipy.stats import norm
 from trieste.acquisition.function import PredictiveVariance
 
 from lnl_surrogate.surrogate import LnLSurrogate, train
-
-
-
 
 
 def plotter_1d(model, data, search_space, **kwargs):

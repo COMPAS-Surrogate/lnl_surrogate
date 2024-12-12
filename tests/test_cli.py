@@ -7,7 +7,7 @@ from click.testing import CliRunner
 from conftest import _mock_lnl_truth
 
 from lnl_surrogate import LnLSurrogate
-from lnl_surrogate.cli import cli_build_surrogate, cli_train, build_surrogate
+from lnl_surrogate.cli import build_surrogate, cli_build_surrogate, cli_train
 
 
 def test_cli(monkeypatch_lnl, mock_data, tmpdir):

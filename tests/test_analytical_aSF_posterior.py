@@ -4,14 +4,15 @@ from typing import Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pytest
 from bilby.core.result import Result
+from common import plotter_1d
 from conftest import MAXX, MINX
 from lnl_computer.cosmic_integration.mcz_grid import McZGrid
 from lnl_computer.observation.mock_observation import MockObservation
 from scipy.stats import norm
+
 from lnl_surrogate.surrogate import LnLSurrogate, train
-from common import plotter_1d
-import pytest
 
 
 @pytest.mark.skip_on_github
