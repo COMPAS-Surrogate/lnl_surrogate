@@ -2,31 +2,23 @@ import glob
 import os
 import re
 import warnings
+from typing import Optional, Union
 
 import bilby
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Union, Optional
 import pandas as pd
-from tqdm.auto import tqdm
 from scipy.interpolate import UnivariateSpline
-import os
-import glob
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+from tqdm.auto import tqdm
 
-
-
-from .kl_distance import compute_statistics
 from ..logger import logger
+from .kl_distance import compute_statistics
+
 
 def _get_npts_from_fname(fname: str) -> np.number:
     search_res = re.search(r"round\d+_(\d+)pts", fname)
     if search_res is None:
-        logger.warning(
-            f"Filename {fname} does not match the expected format"
-        )
+        logger.warning(f"Filename {fname} does not match the expected format")
         return np.nan
     return int(search_res.group(1))
 
@@ -43,9 +35,9 @@ def _get_result_fnames(res_regex: str) -> pd.DataFrame:
 
 
 def save_distances(
-        res_regex: str,
-        ref_res_fname: Optional[Union[str, bilby.result.Result]]=None,
-        fname: str = None
+    res_regex: str,
+    ref_res_fname: Optional[Union[str, bilby.result.Result]] = None,
+    fname: str = None,
 ) -> pd.DataFrame:
     """
     Get a list of KL distances for a set of results files against a reference result
@@ -71,22 +63,30 @@ def save_distances(
         A dataframe with the distances (kl, ks, js) for each result file with respect the reference result
     """
 
-    fname =  "distances.csv" if fname is None else fname
+    fname = "distances.csv" if fname is None else fname
 
     if ref_res_fname is None:
-        ref_res_fname, _ = _get_highest_res_result_fname(os.path.dirname(res_regex))
+        ref_res_fname, _ = _get_highest_res_result_fname(
+            os.path.dirname(res_regex)
+        )
 
     if not os.path.exists(fname):
-        logger.info(f"Getting KLs for all results with {res_regex} + ref: {ref_res_fname}")
+        logger.info(
+            f"Getting KLs for all results with {res_regex} + ref: {ref_res_fname}"
+        )
         result_df = _get_result_fnames(res_regex)
         if ref_res_fname is None:
             ref_res_fname = result_df.fname.values[-1]
         ref_res = bilby.read_in_result(ref_res_fname)
         kl, ks, js = [], [], []
         params = list(ref_res.injection_parameters.keys())
-        for i, f in enumerate(tqdm(result_df.fname, desc="Calculating staistics")):
+        for i, f in enumerate(
+            tqdm(result_df.fname, desc="Calculating staistics")
+        ):
             r = bilby.read_in_result(f)
-            stats = compute_statistics(r.posterior[params], ref_res.posterior[params])
+            stats = compute_statistics(
+                r.posterior[params], ref_res.posterior[params]
+            )
             kl.append(stats.kl)
             ks.append(stats.ks)
             js.append(stats.js)
@@ -101,9 +101,9 @@ def save_distances(
     return result_df
 
 
-def plot_kl_distances(kl_data: pd.DataFrame, fname:str)->None:
+def plot_kl_distances(kl_data: pd.DataFrame, fname: str) -> None:
     fig, ax = plt.subplots()
-    ax.plot(kl_data['kl'], color="tab:green", label="KL Divergence")
+    ax.plot(kl_data["kl"], color="tab:green", label="KL Divergence")
     ax2 = ax.twinx()
     ax2.plot(kl_data["ks"], label="KS Statistic", color="tab:red")
     ax3 = ax.twinx()
@@ -120,8 +120,9 @@ def _get_highest_res_result_fname(res_dir: str) -> str:
     """
     Get the filename of the result with the most points (highest resolution posterior)
     """
-    high_mcmc_fnames = _get_result_fnames(os.path.join(res_dir, "round*_highres_result.json"))
+    high_mcmc_fnames = _get_result_fnames(
+        os.path.join(res_dir, "round*_highres_result.json")
+    )
     res_fname = high_mcmc_fnames.fname.values[-1]
     round_num = int(re.search(r"round(\d+)_", ref_res_fname).group(1))
     return res_fname, round_num
-
