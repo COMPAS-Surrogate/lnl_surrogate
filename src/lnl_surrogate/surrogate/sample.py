@@ -20,6 +20,7 @@ HIGHRES_LABEL = "_highres"
 VARIABLE_LABEL = "_variable_lnl"
 THRESHOLD_LABEL = "_thresholded"
 
+
 def sample_lnl_surrogate(
     lnl_model_path: str,
     outdir: str,
@@ -135,7 +136,6 @@ def sample_lnl_surrogate(
         out_fname=f"{plot_dir}/{label}_median_model.png",
         bilby_result=result,
     )
-
 
 
 def run_sampler(
