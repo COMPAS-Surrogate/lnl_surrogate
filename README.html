@@ -333,17 +333,17 @@ This package acts as a bridge between the COMPAS <a class="reference external" h
 </section>
 <section id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this heading">#</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">trieste.acquisition.function</span> <span class="kn">import</span> <span class="n">PredictiveVariance</span><span class="p">,</span> <span class="n">ExpectedImprovement</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">trieste.acquisition.function</span><span class="w"> </span><span class="kn">import</span> <span class="n">PredictiveVariance</span><span class="p">,</span> <span class="n">ExpectedImprovement</span>
 
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">lnl_surrogate.surrogate</span> <span class="kn">import</span> <span class="n">train</span>
-<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
-<span class="kn">from</span> <span class="nn">lnl_surrogate.surrogate.setup_optimizer</span> <span class="kn">import</span> <span class="n">McZGrid</span>
-<span class="kn">from</span> <span class="nn">lnl_computer.mock_data</span> <span class="kn">import</span> <span class="n">generate_mock_data</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lnl_surrogate.surrogate</span><span class="w"> </span><span class="kn">import</span> <span class="n">train</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lnl_surrogate.surrogate.setup_optimizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">McZGrid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lnl_computer.mock_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_mock_data</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
@@ -353,12 +353,12 @@ This package acts as a bridge between the COMPAS <a class="reference external" h
 <span class="n">OUTDIR</span> <span class="o">=</span> <span class="s1">&#39;outdir&#39;</span>
 <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">OUTDIR</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">mock_lnl</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mock_lnl</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">sf_sample</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sf_sample&#39;</span><span class="p">)</span>
     <span class="n">sf_sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">sf_sample</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
     <span class="k">return</span> <span class="n">NORM</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span><span class="n">sf_sample</span><span class="p">),</span> <span class="mi">0</span>
 
-<span class="k">def</span> <span class="nf">plot_res</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">search_space</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_res</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">search_space</span><span class="p">):</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">MINX</span><span class="p">,</span> <span class="n">MAXX</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">true_y</span> <span class="o">=</span> <span class="n">NORM</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mf">1.0</span>
     <span class="n">model_y</span><span class="p">,</span> <span class="n">model_yunc</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
