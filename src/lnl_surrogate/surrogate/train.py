@@ -11,12 +11,12 @@ from tqdm.auto import trange
 from trieste.acquisition import AcquisitionRule as Rule
 from trieste.bayesian_optimizer import OptimizationResult
 
+from ..kl_distance.batch_distance_computer import save_distances
 from ..logger import Suppressor, logger, set_log_verbosity
 from ..plotting import save_diagnostic_plots, save_gifs
 from .lnl_surrogate import LnLSurrogate
 from .managers import DataManager, OptimisationManager
 from .sample import sample_lnl_surrogate
-from ..kl_distance.batch_distance_computer import save_distances
 
 __all__ = ["train"]
 
@@ -173,7 +173,6 @@ class Trainer:
             )
         except Exception as e:
             logger.warning(f"Error saving KL distances: {e}")
-
 
     def __update_regret_data(self):
         min_obs = tf.reduce_min(self.data.observations).numpy()
